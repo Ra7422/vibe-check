@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Shield, Github, AlertTriangle, CheckCircle, Lock, Eye, Loader2, ArrowRight, Key, Download, FileText, Globe, MousePointer, Sparkles, Zap, ExternalLink } from 'lucide-react'
 
 type ScanStatus = 'idle' | 'scanning' | 'complete' | 'error'
@@ -62,12 +62,61 @@ export default function Home() {
   const [results, setResults] = useState<ScanResult | null>(null)
   const [error, setError] = useState('')
 
+  // GitHub OAuth state
+  const [githubToken, setGithubToken] = useState('')
+  const [githubUser, setGithubUser] = useState<string | null>(null)
+
   // Flow check state
   const [deployedUrl, setDeployedUrl] = useState('')
   const [appDescription, setAppDescription] = useState('')
   const [flowStatus, setFlowStatus] = useState<FlowStatus>('idle')
   const [flowResults, setFlowResults] = useState<FlowResult | null>(null)
   const [currentLlm, setCurrentLlm] = useState<string>('')
+
+  // Handle GitHub OAuth callback and stored token
+  useEffect(() => {
+    // Check for stored GitHub token
+    const storedToken = localStorage.getItem('github_token')
+    const storedUser = localStorage.getItem('github_user')
+    if (storedToken) {
+      setGithubToken(storedToken)
+      setGithubUser(storedUser)
+    }
+
+    // Check for OAuth callback
+    const params = new URLSearchParams(window.location.search)
+    const code = params.get('code')
+    if (code) {
+      // Exchange code for token
+      fetch('/api/github/callback', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ code }),
+      })
+        .then((res) => res.json())
+        .then((data) => {
+          if (data.access_token) {
+            localStorage.setItem('github_token', data.access_token)
+            localStorage.setItem('github_user', data.login || 'Connected')
+            setGithubToken(data.access_token)
+            setGithubUser(data.login || 'Connected')
+            // Clean URL
+            window.history.replaceState({}, '', window.location.pathname)
+          }
+        })
+        .catch(() => {
+          // OAuth failed silently
+        })
+    }
+  }, [])
+
+  // Disconnect GitHub
+  const disconnectGithub = () => {
+    localStorage.removeItem('github_token')
+    localStorage.removeItem('github_user')
+    setGithubToken('')
+    setGithubUser(null)
+  }
 
   // Check which LLMs are configured
   const configuredLlms = {
@@ -233,6 +282,7 @@ export default function Home() {
         body: JSON.stringify({
           repoUrl,
           apiKeys: apiKeys.openai || apiKeys.anthropic || apiKeys.google ? apiKeys : undefined,
+          githubToken: githubToken || undefined,
         }),
       })
 
@@ -435,6 +485,24 @@ export default function Home() {
         {/* Welcome Step */}
         {step === 'welcome' && (
           <div className="text-center space-y-8">
+            {/* Intro Message */}
+            <div className="bg-gradient-to-r from-purple-50 to-primary-50 rounded-2xl p-6 md:p-8 border border-purple-200 max-w-3xl mx-auto">
+              <div className="flex items-center justify-center gap-2 mb-4">
+                <Sparkles className="w-5 h-5 text-purple-500" />
+                <span className="text-sm font-medium text-purple-600 uppercase tracking-wide">For Vibe Coders</span>
+                <Sparkles className="w-5 h-5 text-purple-500" />
+              </div>
+              <p className="text-gray-700 leading-relaxed">
+                Learning to code is a journey, and <strong>vibe coding</strong> lets you build amazing things
+                without years of traditional training. But here's the thing — <em>we don't know what we don't know</em>.
+                You can fix bugs you spot, but what about the security holes and UX issues you've never been taught to see?
+              </p>
+              <p className="text-gray-700 leading-relaxed mt-3">
+                That's why we built this. <strong>Vibe Check</strong> reveals your blind spots — the "unknown unknowns" —
+                so you can ship with confidence. Your imagination is your only limit. Let's make sure the code keeps up.
+              </p>
+            </div>
+
             <div className="space-y-4">
               <h1 className="text-4xl md:text-5xl font-bold text-gray-800">
                 Is Your Vibe <span className="gradient-text">Right?</span>
@@ -506,6 +574,12 @@ export default function Home() {
             >
               Get Started <ArrowRight className="w-5 h-5" />
             </button>
+
+            {/* Privacy Notice */}
+            <div className="flex items-center justify-center gap-2 text-sm text-gray-500 mt-6">
+              <Lock className="w-4 h-4" />
+              <span>No backend database. Your code stays on GitHub. API keys stay in your browser.</span>
+            </div>
           </div>
         )}
 
@@ -537,9 +611,33 @@ export default function Home() {
                 />
               </div>
 
-              <p className="text-sm text-gray-500">
-                We support public GitHub and GitLab repositories
-              </p>
+              <div className="flex items-center justify-between">
+                <p className="text-sm text-gray-500">
+                  Works with public repositories. Connect GitHub for private repos.
+                </p>
+                {githubToken ? (
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm text-green-600 flex items-center gap-1">
+                      <CheckCircle className="w-4 h-4" />
+                      {githubUser || 'Connected'}
+                    </span>
+                    <button
+                      onClick={disconnectGithub}
+                      className="text-sm text-gray-500 hover:text-gray-700 underline"
+                    >
+                      Disconnect
+                    </button>
+                  </div>
+                ) : (
+                  <a
+                    href={`https://github.com/login/oauth/authorize?client_id=${process.env.NEXT_PUBLIC_GITHUB_CLIENT_ID}&scope=repo&redirect_uri=${encodeURIComponent(typeof window !== 'undefined' ? window.location.origin : '')}`}
+                    className="text-sm bg-gray-800 hover:bg-gray-900 text-white px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition-colors"
+                  >
+                    <Github className="w-4 h-4" />
+                    Connect GitHub
+                  </a>
+                )}
+              </div>
             </div>
 
             {/* Step 2: API Keys */}

@@ -7,6 +7,7 @@ interface ScanRequest {
     anthropic?: string
     google?: string
   }
+  githubToken?: string
 }
 
 interface Finding {
@@ -348,13 +349,19 @@ function getLineNumber(content: string, matchIndex: number): number {
   return content.substring(0, matchIndex).split('\n').length
 }
 
-async function fetchRepoTree(owner: string, repo: string): Promise<{ path: string; url: string }[]> {
+async function fetchRepoTree(owner: string, repo: string, githubToken?: string): Promise<{ path: string; url: string }[]> {
+  // Build headers with optional auth
+  const headers: Record<string, string> = {
+    'Accept': 'application/vnd.github.v3+json',
+    'User-Agent': 'VibeCheck-Scanner/1.0',
+  }
+  if (githubToken) {
+    headers['Authorization'] = `Bearer ${githubToken}`
+  }
+
   // Get default branch first
   const repoResponse = await fetch(`https://api.github.com/repos/${owner}/${repo}`, {
-    headers: {
-      'Accept': 'application/vnd.github.v3+json',
-      'User-Agent': 'VibeCheck-Scanner/1.0',
-    },
+    headers,
   })
 
   if (!repoResponse.ok) {
@@ -370,12 +377,7 @@ async function fetchRepoTree(owner: string, repo: string): Promise<{ path: strin
   // Get the tree
   const treeResponse = await fetch(
     `https://api.github.com/repos/${owner}/${repo}/git/trees/${defaultBranch}?recursive=1`,
-    {
-      headers: {
-        'Accept': 'application/vnd.github.v3+json',
-        'User-Agent': 'VibeCheck-Scanner/1.0',
-      },
-    }
+    { headers }
   )
 
   if (!treeResponse.ok) {
@@ -395,13 +397,16 @@ async function fetchRepoTree(owner: string, repo: string): Promise<{ path: strin
     }))
 }
 
-async function fetchFileContent(url: string): Promise<string> {
-  const response = await fetch(url, {
-    headers: {
-      'Accept': 'application/vnd.github.v3+json',
-      'User-Agent': 'VibeCheck-Scanner/1.0',
-    },
-  })
+async function fetchFileContent(url: string, githubToken?: string): Promise<string> {
+  const headers: Record<string, string> = {
+    'Accept': 'application/vnd.github.v3+json',
+    'User-Agent': 'VibeCheck-Scanner/1.0',
+  }
+  if (githubToken) {
+    headers['Authorization'] = `Bearer ${githubToken}`
+  }
+
+  const response = await fetch(url, { headers })
 
   if (!response.ok) {
     throw new Error(`Failed to fetch file: ${response.status}`)
@@ -519,17 +524,21 @@ function scanContent(content: string, filePath: string, findings: Finding[], fin
   }
 }
 
-async function analyzeDependencies(owner: string, repo: string, findings: Finding[], findingId: { value: number }) {
+async function analyzeDependencies(owner: string, repo: string, findings: Finding[], findingId: { value: number }, githubToken?: string) {
+  // Build headers with optional auth
+  const headers: Record<string, string> = {
+    'Accept': 'application/vnd.github.v3+json',
+    'User-Agent': 'VibeCheck-Scanner/1.0',
+  }
+  if (githubToken) {
+    headers['Authorization'] = `Bearer ${githubToken}`
+  }
+
   // Check for package.json
   try {
     const response = await fetch(
       `https://api.github.com/repos/${owner}/${repo}/contents/package.json`,
-      {
-        headers: {
-          'Accept': 'application/vnd.github.v3+json',
-          'User-Agent': 'VibeCheck-Scanner/1.0',
-        },
-      }
+      { headers }
     )
 
     if (response.ok) {
@@ -574,7 +583,7 @@ async function analyzeDependencies(owner: string, repo: string, findings: Findin
 export async function POST(request: NextRequest) {
   try {
     const body: ScanRequest = await request.json()
-    const { repoUrl, apiKeys } = body
+    const { repoUrl, apiKeys, githubToken } = body
 
     // Parse GitHub URL
     const parsed = parseGitHubUrl(repoUrl)
@@ -592,7 +601,7 @@ export async function POST(request: NextRequest) {
 
     try {
       // Fetch repo tree
-      const files = await fetchRepoTree(owner, repo)
+      const files = await fetchRepoTree(owner, repo, githubToken)
 
       // Limit files to scan (avoid timeout)
       const filesToScan = files.slice(0, 100)
@@ -600,7 +609,7 @@ export async function POST(request: NextRequest) {
       // Scan each file
       for (const file of filesToScan) {
         try {
-          const content = await fetchFileContent(file.url)
+          const content = await fetchFileContent(file.url, githubToken)
           scanContent(content, file.path, findings, findingId)
           filesScanned++
         } catch (e) {
@@ -609,7 +618,7 @@ export async function POST(request: NextRequest) {
       }
 
       // Check dependencies
-      await analyzeDependencies(owner, repo, findings, findingId)
+      await analyzeDependencies(owner, repo, findings, findingId, githubToken)
 
       // If we had to limit files, add a note
       if (files.length > 100) {
