@@ -1,0 +1,1 @@
+# SafeguardAI Shared Utilities

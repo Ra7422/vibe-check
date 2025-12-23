@@ -1,0 +1,153 @@
+{
+  "url": "https://meedi8.com",
+  "started_at": "2025-12-22T07:31:22.288795",
+  "finished_at": "2025-12-22T07:31:34.380445",
+  "summary": {
+    "total": 12,
+    "passed": 12,
+    "failed": 0,
+    "skipped": 0
+  },
+  "flows": [
+    {
+      "name": "Landing Page Load",
+      "status": "passed",
+      "duration_ms": 3422,
+      "steps_passed": 3,
+      "steps_total": 5,
+      "error": null,
+      "notes": [
+        "No H1 heading found - SEO issue",
+        "No clear CTA buttons found"
+      ]
+    },
+    {
+      "name": "Navigation Menu",
+      "status": "passed",
+      "duration_ms": 611,
+      "steps_passed": 3,
+      "steps_total": 4,
+      "error": null,
+      "notes": [
+        "No semantic navigation element found",
+        "Nav links found: about"
+      ]
+    },
+    {
+      "name": "Login Page Access",
+      "status": "passed",
+      "duration_ms": 455,
+      "steps_passed": 5,
+      "steps_total": 6,
+      "error": null,
+      "notes": [
+        "No signup link on login page"
+      ]
+    },
+    {
+      "name": "Signup Page Access",
+      "status": "passed",
+      "duration_ms": 465,
+      "steps_passed": 5,
+      "steps_total": 6,
+      "error": null,
+      "notes": [
+        "No OAuth signup options visible"
+      ]
+    },
+    {
+      "name": "Pricing Page",
+      "status": "passed",
+      "duration_ms": 718,
+      "steps_passed": 1,
+      "steps_total": 4,
+      "error": null,
+      "notes": [
+        "No pricing cards found with standard classes"
+      ]
+    },
+    {
+      "name": "FAQ Page",
+      "status": "passed",
+      "duration_ms": 438,
+      "steps_passed": 3,
+      "steps_total": 3,
+      "error": null,
+      "notes": [
+        "Found 1 FAQ items",
+        "Expandable FAQ items present"
+      ]
+    },
+    {
+      "name": "Community Page",
+      "status": "passed",
+      "duration_ms": 453,
+      "steps_passed": 2,
+      "steps_total": 3,
+      "error": null,
+      "notes": [
+        "Page title: Meedi8 - AI Mediation"
+      ]
+    },
+    {
+      "name": "Mobile Responsiveness",
+      "status": "passed",
+      "duration_ms": 641,
+      "steps_passed": 3,
+      "steps_total": 4,
+      "error": null,
+      "notes": [
+        "No mobile menu toggle found",
+        "Content fits mobile width"
+      ]
+    },
+    {
+      "name": "OAuth Buttons Present",
+      "status": "passed",
+      "duration_ms": 590,
+      "steps_passed": 1,
+      "steps_total": 4,
+      "error": null,
+      "notes": [
+        "Google OAuth button not found",
+        "Facebook OAuth button not found",
+        "Telegram OAuth button not found"
+      ]
+    },
+    {
+      "name": "Form Validation",
+      "status": "passed",
+      "duration_ms": 2160,
+      "steps_passed": 3,
+      "steps_total": 4,
+      "error": null,
+      "notes": [
+        "No validation message shown for empty form"
+      ]
+    },
+    {
+      "name": "Error Handling",
+      "status": "passed",
+      "duration_ms": 579,
+      "steps_passed": 1,
+      "steps_total": 2,
+      "error": null,
+      "notes": [
+        "404 page returned status 200"
+      ]
+    },
+    {
+      "name": "Page Load Performance",
+      "status": "passed",
+      "duration_ms": 615,
+      "steps_passed": 3,
+      "steps_total": 3,
+      "error": null,
+      "notes": [
+        "Page load time: 592ms",
+        "Good: Under 3 second load time",
+        "Images: 1 total, 0 oversized"
+      ]
+    }
+  ]
+}

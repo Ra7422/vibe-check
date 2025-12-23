@@ -1,0 +1,60 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "safeguard-dev-tools"
+version = "0.1.0"
+description = "AI-powered development tools for automated testing and security analysis"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    # LLM Providers
+    "anthropic>=0.40.0",
+    "openai>=1.50.0",
+    "google-generativeai>=0.8.0",
+
+    # Testing
+    "playwright>=1.45.0",
+    "pytest>=8.0.0",
+    "pytest-asyncio>=0.23.0",
+
+    # Security Scanning
+    "bandit>=1.7.0",          # Python security linter
+    "safety>=3.0.0",          # Dependency vulnerability checker
+    "detect-secrets>=1.4.0",  # Secret detection
+    "semgrep>=1.50.0",        # Static analysis
+
+    # Utilities
+    "pyyaml>=6.0",
+    "rich>=13.0.0",           # Beautiful terminal output
+    "typer>=0.12.0",          # CLI framework
+    "aiohttp>=3.9.0",
+    "pydantic>=2.5.0",
+    "jinja2>=3.1.0",          # Report templates
+]
+
+[project.optional-dependencies]
+dev = [
+    "black>=24.0.0",
+    "ruff>=0.5.0",
+    "mypy>=1.10.0",
+]
+mobile = [
+    "Appium-Python-Client>=4.0.0",
+]
+
+[project.scripts]
+safeguard = "shared.src.cli:app"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["ai_flow_tester*", "security_scanner*", "shared*"]
+
+[tool.black]
+line-length = 100
+target-version = ["py310"]
+
+[tool.ruff]
+line-length = 100
+select = ["E", "F", "W", "I"]

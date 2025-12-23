@@ -1,0 +1,97 @@
+# SafeguardAI Configuration Example
+# Copy this to .safeguard.yaml and customize for your project
+
+project:
+  name: "My Application"
+  type: "web"  # web, mobile, pwa, api
+
+# AI Flow Tester Configuration
+ai_flow_tester:
+  # User personas to simulate during testing
+  personas:
+    - default       # Regular user
+    - tech-naive    # Non-technical user
+    - power-user    # Experienced user
+    - adversarial   # Security tester
+    - mobile        # Mobile user
+    - accessibility # Screen reader user
+
+  # LLM provider configuration
+  llm_providers:
+    primary: gemini-flash  # Fast, cost-effective for routine analysis
+    vision: gemini         # For screenshot analysis
+    consensus:             # For critical decisions requiring agreement
+      - claude
+      - openai
+      - gemini
+    adversarial: grok      # For creative/adversarial thinking
+
+  # Playwright browser settings
+  playwright:
+    headless: true
+    timeout_ms: 30000
+    video: true
+    screenshot_on_failure: true
+    viewport:
+      width: 1280
+      height: 720
+
+# Security Scanner Configuration
+security_scanner:
+  # Which checks to enable
+  checks:
+    owasp: true
+    secrets: true
+    dependencies: true
+    config: true
+    compliance: true
+
+  # Compliance frameworks to check against
+  compliance_frameworks:
+    - hipaa     # Healthcare data protection
+    - pci_dss   # Payment card security
+    - soc2      # Security controls
+
+  # Files/folders to exclude from scanning
+  exclude_patterns:
+    - "node_modules/"
+    - ".git/"
+    - "__pycache__/"
+    - "*.min.js"
+    - "*.map"
+    - ".venv/"
+    - "venv/"
+    - "dist/"
+    - "build/"
+    - ".next/"
+    - "coverage/"
+
+  # File types to scan
+  file_extensions:
+    - ".py"
+    - ".js"
+    - ".ts"
+    - ".tsx"
+    - ".jsx"
+    - ".java"
+    - ".go"
+    - ".rb"
+    - ".php"
+    - ".yaml"
+    - ".yml"
+    - ".json"
+    - ".env"
+    - ".sql"
+    - ".sh"
+
+  # Minimum severity to report (critical, high, medium, low)
+  severity_threshold: low
+
+  # Maximum files to analyze with LLM per category
+  max_files_per_scan: 50
+
+# LLM API Keys (set via environment variables, not in config)
+# ANTHROPIC_API_KEY=your-key
+# OPENAI_API_KEY=your-key
+# GOOGLE_API_KEY=your-key
+# GROK_API_KEY=your-key
