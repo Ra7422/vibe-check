@@ -417,6 +417,44 @@ async function fetchFileContent(url: string): Promise<string> {
   return data.content || ''
 }
 
+function isPatternDefinition(content: string, matchIndex: number): boolean {
+  // Get the line containing the match
+  const lineStart = content.lastIndexOf('\n', matchIndex) + 1
+  const lineEnd = content.indexOf('\n', matchIndex)
+  const line = content.substring(lineStart, lineEnd === -1 ? content.length : lineEnd)
+
+  // Check if this looks like a pattern/regex definition (not actual code)
+  const patternIndicators = [
+    /pattern\s*[:=]/i,           // pattern: or pattern =
+    /regex\s*[:=]/i,             // regex: or regex =
+    /RegExp\s*\(/,               // new RegExp(
+    /\/[^\/]+\/[gimsuvy]*\s*,/,  // /pattern/, (regex literal followed by comma)
+    /name\s*:\s*['"][^'"]+['"]/,  // name: 'Something' (pattern config)
+    /description\s*:\s*['"][^'"]+['"]/, // description in pattern config
+    /severity\s*:\s*['"][^'"]+['"]/, // severity in pattern config
+    /recommendation\s*:\s*['"][^'"]+['"]/, // recommendation
+    /const\s+\w+_PATTERNS\s*=/,  // const SECRET_PATTERNS =
+    /category\s*:\s*['"][^'"]+['"]/, // category in pattern config
+  ]
+
+  for (const indicator of patternIndicators) {
+    if (indicator.test(line)) {
+      return true
+    }
+  }
+
+  // Check if match is inside a regex literal on this line
+  // Count unescaped forward slashes before the match position within the line
+  const beforeMatch = line.substring(0, matchIndex - lineStart)
+  const slashCount = (beforeMatch.match(/(?<!\\)\//g) || []).length
+  if (slashCount % 2 === 1) {
+    // Odd number of slashes means we're inside a regex literal
+    return true
+  }
+
+  return false
+}
+
 function scanContent(content: string, filePath: string, findings: Finding[], findingId: { value: number }) {
   // Check for secrets
   for (const pattern of SECRET_PATTERNS) {
@@ -430,6 +468,11 @@ function scanContent(content: string, filePath: string, findings: Finding[], fin
           matchText.includes('example') || matchText.includes('EXAMPLE') ||
           matchText.includes('placeholder') || matchText.includes('<') ||
           matchText.includes('${')) {
+        continue
+      }
+
+      // Skip if this is a pattern definition (not actual code)
+      if (isPatternDefinition(content, match.index)) {
         continue
       }
 
@@ -456,6 +499,11 @@ function scanContent(content: string, filePath: string, findings: Finding[], fin
     const maxPerPattern = pattern.name === 'Console Logging' ? 3 : 10
 
     while ((match = regex.exec(content)) !== null && patternCount < maxPerPattern) {
+      // Skip if this is a pattern definition (not actual code)
+      if (isPatternDefinition(content, match.index)) {
+        continue
+      }
+
       patternCount++
       findings.push({
         id: String(findingId.value++),
