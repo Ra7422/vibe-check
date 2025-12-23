@@ -155,7 +155,7 @@ const SECRET_PATTERNS = [
 const VULNERABILITY_PATTERNS = [
   {
     name: 'SQL Injection Risk',
-    pattern: /(?:execute|query|raw)\s*\([^)]*\+|`[^`]*\$\{[^}]*\}[^`]*`\s*\)/g,
+    pattern: /(?:execute|query|raw)\s*\(\s*[`'"][^`'"]*\s*\+|\+\s*[^`'"]*[`'"]\s*\)/g,
     severity: 'high' as const,
     category: 'Injection',
     description: 'Potential SQL injection vulnerability. User input may be concatenated into queries.',
@@ -163,7 +163,7 @@ const VULNERABILITY_PATTERNS = [
   },
   {
     name: 'Command Injection Risk',
-    pattern: /(?:exec|spawn|execSync|spawnSync)\s*\([^)]*\+|`[^`]*\$\{/g,
+    pattern: /(?:exec|execSync|spawn|spawnSync)\s*\(\s*(?:[`'"][^`'"]*\s*\+|\$\{)/g,
     severity: 'critical' as const,
     category: 'Injection',
     description: 'Potential command injection. User input may be passed to shell commands.',
