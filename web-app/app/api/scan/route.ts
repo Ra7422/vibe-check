@@ -605,7 +605,6 @@ export async function POST(request: NextRequest) {
           filesScanned++
         } catch (e) {
           // Skip files that can't be read
-          console.error(`Failed to scan ${file.path}:`, e)
         }
       }
 

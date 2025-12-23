@@ -292,7 +292,7 @@ export default function Home() {
             allIssues.push(...data.issues.map((i: FlowIssue) => ({ ...i, source: 'openai' as const })))
           }
         } catch (e) {
-          console.error('OpenAI flow check failed:', e)
+          // OpenAI flow check failed silently
         }
       }
 

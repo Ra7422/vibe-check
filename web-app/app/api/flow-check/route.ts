@@ -242,7 +242,6 @@ export async function POST(request: NextRequest) {
           )
       }
     } catch (error) {
-      console.error(`${provider} analysis error:`, error)
       return NextResponse.json(
         { error: `Analysis failed: ${error}` },
         { status: 500 }
