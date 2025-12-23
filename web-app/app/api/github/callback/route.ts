@@ -29,7 +29,11 @@ export async function POST(request: Request) {
 
     if (tokenData.error) {
       return NextResponse.json(
-        { error: tokenData.error_description || 'OAuth failed' },
+        {
+          error: tokenData.error_description || tokenData.error || 'OAuth failed',
+          details: tokenData.error,
+          hint: 'Check GitHub OAuth App callback URL matches: ' + (process.env.VERCEL_URL || 'codevibe-check.vercel.app')
+        },
         { status: 400 }
       )
     }
