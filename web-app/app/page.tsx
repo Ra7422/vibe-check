@@ -100,8 +100,9 @@ export default function Home() {
             localStorage.setItem('github_user', data.login || 'Connected')
             setGithubToken(data.access_token)
             setGithubUser(data.login || 'Connected')
-            // Clean URL
+            // Clean URL and go to setup step
             window.history.replaceState({}, '', window.location.pathname)
+            setStep('setup')
           }
         })
         .catch(() => {
