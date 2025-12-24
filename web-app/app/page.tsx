@@ -62,9 +62,8 @@ export default function Home() {
   const [results, setResults] = useState<ScanResult | null>(null)
   const [error, setError] = useState('')
 
-  // GitHub OAuth state
+  // GitHub token state (Personal Access Token)
   const [githubToken, setGithubToken] = useState('')
-  const [githubUser, setGithubUser] = useState<string | null>(null)
 
   // Flow check state
   const [deployedUrl, setDeployedUrl] = useState('')
@@ -73,50 +72,22 @@ export default function Home() {
   const [flowResults, setFlowResults] = useState<FlowResult | null>(null)
   const [currentLlm, setCurrentLlm] = useState<string>('')
 
-  // Handle GitHub OAuth callback and stored token
+  // Load stored GitHub token on mount
   useEffect(() => {
-    // Check for stored GitHub token
     const storedToken = localStorage.getItem('github_token')
-    const storedUser = localStorage.getItem('github_user')
     if (storedToken) {
       setGithubToken(storedToken)
-      setGithubUser(storedUser)
-    }
-
-    // Check for OAuth callback
-    const params = new URLSearchParams(window.location.search)
-    const code = params.get('code')
-    if (code) {
-      // Exchange code for token
-      fetch('/api/github/callback', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ code }),
-      })
-        .then((res) => res.json())
-        .then((data) => {
-          if (data.access_token) {
-            localStorage.setItem('github_token', data.access_token)
-            localStorage.setItem('github_user', data.login || 'Connected')
-            setGithubToken(data.access_token)
-            setGithubUser(data.login || 'Connected')
-            // Clean URL and go to setup step
-            window.history.replaceState({}, '', window.location.pathname)
-            setStep('setup')
-          }
-        })
-        .catch(() => {
-          // OAuth failed silently
-        })
     }
   }, [])
 
-  // Disconnect GitHub
-  const disconnectGithub = () => {
-    localStorage.removeItem('github_token')
-    localStorage.removeItem('github_user')
-    setGithubToken('')
-    setGithubUser(null)
+  // Save GitHub token to localStorage when it changes
+  const handleGithubTokenChange = (token: string) => {
+    setGithubToken(token)
+    if (token) {
+      localStorage.setItem('github_token', token)
+    } else {
+      localStorage.removeItem('github_token')
+    }
   }
 
   // Check which LLMs are configured
@@ -612,31 +583,38 @@ export default function Home() {
                 />
               </div>
 
-              <div className="flex items-center justify-between">
-                <p className="text-sm text-gray-500">
-                  Works with public repositories. Connect GitHub for private repos.
-                </p>
-                {githubToken ? (
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm text-green-600 flex items-center gap-1">
-                      <CheckCircle className="w-4 h-4" />
-                      {githubUser || 'Connected'}
-                    </span>
-                    <button
-                      onClick={disconnectGithub}
-                      className="text-sm text-gray-500 hover:text-gray-700 underline"
-                    >
-                      Disconnect
-                    </button>
-                  </div>
-                ) : (
+              <p className="text-sm text-gray-500">
+                Works with public repositories. Add a GitHub token below for private repos.
+              </p>
+
+              {/* GitHub Token for Private Repos */}
+              <div className="bg-gray-50 rounded-xl p-4 space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium text-gray-700 flex items-center gap-2">
+                    <Lock className="w-4 h-4" />
+                    Private Repo Access (Optional)
+                  </span>
                   <a
-                    href={`https://github.com/login/oauth/authorize?client_id=${process.env.NEXT_PUBLIC_GITHUB_CLIENT_ID}&scope=repo&redirect_uri=${encodeURIComponent(typeof window !== 'undefined' ? window.location.origin : '')}`}
-                    className="text-sm bg-gray-800 hover:bg-gray-900 text-white px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition-colors"
+                    href="https://github.com/settings/tokens/new?scopes=repo&description=Vibe%20Check%20Scanner"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-xs text-primary-600 hover:text-primary-700 flex items-center gap-1"
                   >
-                    <Github className="w-4 h-4" />
-                    Connect GitHub
+                    Get token <ExternalLink className="w-3 h-3" />
                   </a>
+                </div>
+                <input
+                  type="password"
+                  placeholder="ghp_xxxxxxxxxxxx"
+                  value={githubToken}
+                  onChange={(e) => handleGithubTokenChange(e.target.value)}
+                  className="w-full px-4 py-2 rounded-lg border border-gray-200 focus:border-primary-500 focus:outline-none text-sm"
+                />
+                {githubToken && (
+                  <p className="text-xs text-green-600 flex items-center gap-1">
+                    <CheckCircle className="w-3 h-3" />
+                    Token saved - you can scan private repos
+                  </p>
                 )}
               </div>
             </div>
