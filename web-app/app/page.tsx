@@ -180,22 +180,31 @@ export default function Home() {
         {step === 'welcome' && (
           <div className="text-center space-y-8">
             {/* Intro Message */}
-            <div className="bg-gradient-to-r from-purple-50 to-primary-50 rounded-2xl p-6 md:p-8 border border-purple-200 max-w-3xl mx-auto">
+            <div className="bg-gradient-to-r from-purple-50 to-primary-50 rounded-2xl p-6 md:p-8 border border-purple-200 max-w-4xl mx-auto">
               <div className="flex items-center justify-center gap-2 mb-4">
                 <Sparkles className="w-5 h-5 text-purple-500" />
                 <span className="text-sm font-medium text-purple-600 uppercase tracking-wide">For Vibe Coders</span>
                 <Sparkles className="w-5 h-5 text-purple-500" />
               </div>
-              <p className="text-gray-700 leading-relaxed">
-                You know what grinds my gears? Those "10 years experience" developers acting like you need a
-                computer science degree to build apps. Meanwhile, I'm over here telling AI to <em>"make it work"</em> and
-                it just... works. No rules, no gatekeepers, just vibes and shipping.
-              </p>
-              <p className="text-gray-700 leading-relaxed mt-3">
-                But here's the thing — we don't know what we don't know. Your code runs fine until some hacker
-                finds that API key you accidentally left in there. That's why we built this. <strong>Vibe Check</strong> catches
-                the stuff you never learned to look for. Keep vibing, keep shipping — we'll watch your back.
-              </p>
+              <div className="flex flex-col md:flex-row items-center gap-6">
+                <img
+                  src="https://upload.wikimedia.org/wikipedia/en/c/c2/Peter_Griffin.png"
+                  alt="Peter Griffin"
+                  className="w-32 md:w-40 flex-shrink-0"
+                />
+                <div className="text-left">
+                  <p className="text-gray-700 leading-relaxed">
+                    You know what grinds my gears? Those "10 years experience" developers acting like you need a
+                    computer science degree to build apps. Meanwhile, I'm over here telling AI to <em>"make it work"</em> and
+                    it just... works. No rules, no gatekeepers, just vibes and shipping.
+                  </p>
+                  <p className="text-gray-700 leading-relaxed mt-3">
+                    But here's the thing — we don't know what we don't know. Your code runs fine until some hacker
+                    finds that API key you accidentally left in there. That's why we built this. <strong>Vibe Check</strong> catches
+                    the stuff you never learned to look for. Keep vibing, keep shipping — we'll watch your back.
+                  </p>
+                </div>
+              </div>
             </div>
 
             <div className="space-y-4">
