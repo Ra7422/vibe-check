@@ -3,11 +3,222 @@ import { NextRequest, NextResponse } from 'next/server'
 interface ScanRequest {
   repoUrl: string
   apiKeys?: {
-    openai?: string
     anthropic?: string
-    google?: string
+    openai?: string
+    gemini?: string
+    grok?: string
+    mistral?: string
   }
   githubToken?: string
+}
+
+interface LLMFinding {
+  title: string
+  severity: 'critical' | 'high' | 'medium' | 'low'
+  category: string
+  description: string
+  file?: string
+  line?: number
+}
+
+// LLM analysis functions
+async function analyzeWithAnthropic(code: string, filePath: string, apiKey: string): Promise<LLMFinding[]> {
+  try {
+    const response = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': apiKey,
+        'anthropic-version': '2023-06-01',
+      },
+      body: JSON.stringify({
+        model: 'claude-3-haiku-20240307',
+        max_tokens: 1024,
+        messages: [{
+          role: 'user',
+          content: `Analyze this code for security vulnerabilities. Return ONLY a JSON array of findings. Each finding must have: title (string), severity (critical|high|medium|low), category (string), description (string), line (number if applicable).
+
+File: ${filePath}
+\`\`\`
+${code.slice(0, 4000)}
+\`\`\`
+
+Return [] if no issues found. Return ONLY valid JSON array, no other text.`
+        }],
+      }),
+    })
+
+    if (!response.ok) return []
+    const data = await response.json()
+    const text = data.content?.[0]?.text || '[]'
+    const jsonMatch = text.match(/\[[\s\S]*\]/)
+    if (!jsonMatch) return []
+    const findings = JSON.parse(jsonMatch[0])
+    return findings.map((f: LLMFinding) => ({ ...f, file: filePath }))
+  } catch {
+    return []
+  }
+}
+
+async function analyzeWithOpenAI(code: string, filePath: string, apiKey: string): Promise<LLMFinding[]> {
+  try {
+    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${apiKey}`,
+      },
+      body: JSON.stringify({
+        model: 'gpt-4o-mini',
+        max_tokens: 1024,
+        messages: [{
+          role: 'user',
+          content: `Analyze this code for security vulnerabilities. Return ONLY a JSON array of findings. Each finding must have: title (string), severity (critical|high|medium|low), category (string), description (string), line (number if applicable).
+
+File: ${filePath}
+\`\`\`
+${code.slice(0, 4000)}
+\`\`\`
+
+Return [] if no issues found. Return ONLY valid JSON array, no other text.`
+        }],
+      }),
+    })
+
+    if (!response.ok) return []
+    const data = await response.json()
+    const text = data.choices?.[0]?.message?.content || '[]'
+    const jsonMatch = text.match(/\[[\s\S]*\]/)
+    if (!jsonMatch) return []
+    const findings = JSON.parse(jsonMatch[0])
+    return findings.map((f: LLMFinding) => ({ ...f, file: filePath }))
+  } catch {
+    return []
+  }
+}
+
+async function analyzeWithGemini(code: string, filePath: string, apiKey: string): Promise<LLMFinding[]> {
+  try {
+    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        contents: [{
+          parts: [{
+            text: `Analyze this code for security vulnerabilities. Return ONLY a JSON array of findings. Each finding must have: title (string), severity (critical|high|medium|low), category (string), description (string), line (number if applicable).
+
+File: ${filePath}
+\`\`\`
+${code.slice(0, 4000)}
+\`\`\`
+
+Return [] if no issues found. Return ONLY valid JSON array, no other text.`
+          }]
+        }],
+      }),
+    })
+
+    if (!response.ok) return []
+    const data = await response.json()
+    const text = data.candidates?.[0]?.content?.parts?.[0]?.text || '[]'
+    const jsonMatch = text.match(/\[[\s\S]*\]/)
+    if (!jsonMatch) return []
+    const findings = JSON.parse(jsonMatch[0])
+    return findings.map((f: LLMFinding) => ({ ...f, file: filePath }))
+  } catch {
+    return []
+  }
+}
+
+async function analyzeWithGrok(code: string, filePath: string, apiKey: string): Promise<LLMFinding[]> {
+  try {
+    const response = await fetch('https://api.x.ai/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${apiKey}`,
+      },
+      body: JSON.stringify({
+        model: 'grok-beta',
+        max_tokens: 1024,
+        messages: [{
+          role: 'user',
+          content: `Analyze this code for security vulnerabilities. Return ONLY a JSON array of findings. Each finding must have: title (string), severity (critical|high|medium|low), category (string), description (string), line (number if applicable).
+
+File: ${filePath}
+\`\`\`
+${code.slice(0, 4000)}
+\`\`\`
+
+Return [] if no issues found. Return ONLY valid JSON array, no other text.`
+        }],
+      }),
+    })
+
+    if (!response.ok) return []
+    const data = await response.json()
+    const text = data.choices?.[0]?.message?.content || '[]'
+    const jsonMatch = text.match(/\[[\s\S]*\]/)
+    if (!jsonMatch) return []
+    const findings = JSON.parse(jsonMatch[0])
+    return findings.map((f: LLMFinding) => ({ ...f, file: filePath }))
+  } catch {
+    return []
+  }
+}
+
+async function analyzeWithMistral(code: string, filePath: string, apiKey: string): Promise<LLMFinding[]> {
+  try {
+    const response = await fetch('https://api.mistral.ai/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${apiKey}`,
+      },
+      body: JSON.stringify({
+        model: 'mistral-small-latest',
+        max_tokens: 1024,
+        messages: [{
+          role: 'user',
+          content: `Analyze this code for security vulnerabilities. Return ONLY a JSON array of findings. Each finding must have: title (string), severity (critical|high|medium|low), category (string), description (string), line (number if applicable).
+
+File: ${filePath}
+\`\`\`
+${code.slice(0, 4000)}
+\`\`\`
+
+Return [] if no issues found. Return ONLY valid JSON array, no other text.`
+        }],
+      }),
+    })
+
+    if (!response.ok) return []
+    const data = await response.json()
+    const text = data.choices?.[0]?.message?.content || '[]'
+    const jsonMatch = text.match(/\[[\s\S]*\]/)
+    if (!jsonMatch) return []
+    const findings = JSON.parse(jsonMatch[0])
+    return findings.map((f: LLMFinding) => ({ ...f, file: filePath }))
+  } catch {
+    return []
+  }
+}
+
+type ApiKeys = NonNullable<ScanRequest['apiKeys']>
+
+async function runLLMAnalysis(code: string, filePath: string, apiKeys: ApiKeys): Promise<LLMFinding[]> {
+  const analyses: Promise<LLMFinding[]>[] = []
+
+  if (apiKeys.anthropic) analyses.push(analyzeWithAnthropic(code, filePath, apiKeys.anthropic))
+  if (apiKeys.openai) analyses.push(analyzeWithOpenAI(code, filePath, apiKeys.openai))
+  if (apiKeys.gemini) analyses.push(analyzeWithGemini(code, filePath, apiKeys.gemini))
+  if (apiKeys.grok) analyses.push(analyzeWithGrok(code, filePath, apiKeys.grok))
+  if (apiKeys.mistral) analyses.push(analyzeWithMistral(code, filePath, apiKeys.mistral))
+
+  if (analyses.length === 0) return []
+
+  const results = await Promise.all(analyses)
+  return results.flat()
 }
 
 interface Finding {
@@ -607,13 +818,48 @@ export async function POST(request: NextRequest) {
       const filesToScan = files.slice(0, 100)
 
       // Scan each file
+      const hasApiKeys = apiKeys && Object.values(apiKeys).some(k => k)
+      const llmFilesToAnalyze: { path: string; content: string }[] = []
+
       for (const file of filesToScan) {
         try {
           const content = await fetchFileContent(file.url, githubToken)
           scanContent(content, file.path, findings, findingId)
           filesScanned++
+
+          // Collect important files for LLM analysis (limit to key files to avoid API costs)
+          if (hasApiKeys && llmFilesToAnalyze.length < 10) {
+            const ext = file.path.split('.').pop()?.toLowerCase()
+            const isImportant = ['ts', 'tsx', 'js', 'jsx', 'py', 'go', 'java', 'rb', 'php'].includes(ext || '')
+            const isRoute = file.path.includes('route') || file.path.includes('api') || file.path.includes('auth')
+            const isConfig = file.path.includes('.env') || file.path.includes('config')
+            if (isImportant || isRoute || isConfig) {
+              llmFilesToAnalyze.push({ path: file.path, content })
+            }
+          }
         } catch (e) {
           // Skip files that can't be read
+        }
+      }
+
+      // Run LLM analysis on collected files (in parallel)
+      if (hasApiKeys && llmFilesToAnalyze.length > 0 && apiKeys) {
+        const llmPromises = llmFilesToAnalyze.map(f => runLLMAnalysis(f.content, f.path, apiKeys))
+        const llmResults = await Promise.all(llmPromises)
+        const llmFindings = llmResults.flat()
+
+        // Add LLM findings with unique IDs
+        for (const llmFinding of llmFindings) {
+          findings.push({
+            id: String(findingId.value++),
+            title: `[AI] ${llmFinding.title}`,
+            severity: llmFinding.severity,
+            category: llmFinding.category,
+            description: llmFinding.description,
+            recommendation: 'AI-detected issue. Review and verify this finding.',
+            file: llmFinding.file,
+            line: llmFinding.line,
+          })
         }
       }
 

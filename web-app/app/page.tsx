@@ -158,6 +158,9 @@ export default function Home() {
         body: JSON.stringify({
           repoUrl,
           githubToken: githubToken || undefined,
+          apiKeys: Object.fromEntries(
+            Object.entries(apiKeys).filter(([, v]) => v)
+          ),
         }),
       })
 
