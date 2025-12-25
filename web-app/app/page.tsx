@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Shield, Github, AlertTriangle, CheckCircle, Lock, Loader2, ArrowRight, Download, Sparkles, ExternalLink, Key } from 'lucide-react'
+import { Shield, Github, AlertTriangle, CheckCircle, Lock, Loader2, ArrowRight, Download, Sparkles, ExternalLink, Key, XCircle } from 'lucide-react'
 
 type ScanStatus = 'idle' | 'scanning' | 'complete' | 'error'
 
@@ -24,6 +24,7 @@ interface ScanResult {
     medium: number
     low: number
   }
+  llmStatus?: { provider: string; success: boolean; error?: string }[]
 }
 
 export default function Home() {
@@ -522,6 +523,38 @@ export default function Home() {
                 <div className="text-sm text-green-700">Low</div>
               </div>
             </div>
+
+            {/* AI Models Status */}
+            {results.llmStatus && results.llmStatus.length > 0 && (
+              <div className="glass rounded-xl p-4">
+                <h3 className="text-sm font-medium text-gray-600 mb-3">AI Models Used</h3>
+                <div className="flex flex-wrap gap-3">
+                  {results.llmStatus.map((status) => (
+                    <div
+                      key={status.provider}
+                      className={`flex items-center gap-2 px-3 py-2 rounded-lg ${
+                        status.success
+                          ? 'bg-green-50 text-green-700 border border-green-200'
+                          : 'bg-red-50 text-red-700 border border-red-200'
+                      }`}
+                      title={status.error || (status.success ? 'Analysis successful' : 'Analysis failed')}
+                    >
+                      {status.success ? (
+                        <CheckCircle className="w-4 h-4" />
+                      ) : (
+                        <XCircle className="w-4 h-4" />
+                      )}
+                      <span className="text-sm font-medium capitalize">{status.provider}</span>
+                    </div>
+                  ))}
+                </div>
+                {results.llmStatus.some(s => !s.success) && (
+                  <p className="text-xs text-red-600 mt-2">
+                    Some AI models failed. Check your API keys and try again.
+                  </p>
+                )}
+              </div>
+            )}
 
             {/* Findings List */}
             <div className="space-y-4">

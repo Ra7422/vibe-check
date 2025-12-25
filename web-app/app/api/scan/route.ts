@@ -21,8 +21,15 @@ interface LLMFinding {
   line?: number
 }
 
+interface LLMResult {
+  provider: string
+  success: boolean
+  error?: string
+  findings: LLMFinding[]
+}
+
 // LLM analysis functions
-async function analyzeWithAnthropic(code: string, filePath: string, apiKey: string): Promise<LLMFinding[]> {
+async function analyzeWithAnthropic(code: string, filePath: string, apiKey: string): Promise<LLMResult> {
   try {
     const response = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
@@ -48,19 +55,21 @@ Return [] if no issues found. Return ONLY valid JSON array, no other text.`
       }),
     })
 
-    if (!response.ok) return []
+    if (!response.ok) {
+      return { provider: 'anthropic', success: false, error: `API error: ${response.status}`, findings: [] }
+    }
     const data = await response.json()
     const text = data.content?.[0]?.text || '[]'
     const jsonMatch = text.match(/\[[\s\S]*\]/)
-    if (!jsonMatch) return []
+    if (!jsonMatch) return { provider: 'anthropic', success: true, findings: [] }
     const findings = JSON.parse(jsonMatch[0])
-    return findings.map((f: LLMFinding) => ({ ...f, file: filePath }))
-  } catch {
-    return []
+    return { provider: 'anthropic', success: true, findings: findings.map((f: LLMFinding) => ({ ...f, file: filePath })) }
+  } catch (e) {
+    return { provider: 'anthropic', success: false, error: e instanceof Error ? e.message : 'Unknown error', findings: [] }
   }
 }
 
-async function analyzeWithOpenAI(code: string, filePath: string, apiKey: string): Promise<LLMFinding[]> {
+async function analyzeWithOpenAI(code: string, filePath: string, apiKey: string): Promise<LLMResult> {
   try {
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
@@ -85,19 +94,21 @@ Return [] if no issues found. Return ONLY valid JSON array, no other text.`
       }),
     })
 
-    if (!response.ok) return []
+    if (!response.ok) {
+      return { provider: 'openai', success: false, error: `API error: ${response.status}`, findings: [] }
+    }
     const data = await response.json()
     const text = data.choices?.[0]?.message?.content || '[]'
     const jsonMatch = text.match(/\[[\s\S]*\]/)
-    if (!jsonMatch) return []
+    if (!jsonMatch) return { provider: 'openai', success: true, findings: [] }
     const findings = JSON.parse(jsonMatch[0])
-    return findings.map((f: LLMFinding) => ({ ...f, file: filePath }))
-  } catch {
-    return []
+    return { provider: 'openai', success: true, findings: findings.map((f: LLMFinding) => ({ ...f, file: filePath })) }
+  } catch (e) {
+    return { provider: 'openai', success: false, error: e instanceof Error ? e.message : 'Unknown error', findings: [] }
   }
 }
 
-async function analyzeWithGemini(code: string, filePath: string, apiKey: string): Promise<LLMFinding[]> {
+async function analyzeWithGemini(code: string, filePath: string, apiKey: string): Promise<LLMResult> {
   try {
     const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
       method: 'POST',
@@ -118,19 +129,21 @@ Return [] if no issues found. Return ONLY valid JSON array, no other text.`
       }),
     })
 
-    if (!response.ok) return []
+    if (!response.ok) {
+      return { provider: 'gemini', success: false, error: `API error: ${response.status}`, findings: [] }
+    }
     const data = await response.json()
     const text = data.candidates?.[0]?.content?.parts?.[0]?.text || '[]'
     const jsonMatch = text.match(/\[[\s\S]*\]/)
-    if (!jsonMatch) return []
+    if (!jsonMatch) return { provider: 'gemini', success: true, findings: [] }
     const findings = JSON.parse(jsonMatch[0])
-    return findings.map((f: LLMFinding) => ({ ...f, file: filePath }))
-  } catch {
-    return []
+    return { provider: 'gemini', success: true, findings: findings.map((f: LLMFinding) => ({ ...f, file: filePath })) }
+  } catch (e) {
+    return { provider: 'gemini', success: false, error: e instanceof Error ? e.message : 'Unknown error', findings: [] }
   }
 }
 
-async function analyzeWithGrok(code: string, filePath: string, apiKey: string): Promise<LLMFinding[]> {
+async function analyzeWithGrok(code: string, filePath: string, apiKey: string): Promise<LLMResult> {
   try {
     const response = await fetch('https://api.x.ai/v1/chat/completions', {
       method: 'POST',
@@ -155,19 +168,21 @@ Return [] if no issues found. Return ONLY valid JSON array, no other text.`
       }),
     })
 
-    if (!response.ok) return []
+    if (!response.ok) {
+      return { provider: 'grok', success: false, error: `API error: ${response.status}`, findings: [] }
+    }
     const data = await response.json()
     const text = data.choices?.[0]?.message?.content || '[]'
     const jsonMatch = text.match(/\[[\s\S]*\]/)
-    if (!jsonMatch) return []
+    if (!jsonMatch) return { provider: 'grok', success: true, findings: [] }
     const findings = JSON.parse(jsonMatch[0])
-    return findings.map((f: LLMFinding) => ({ ...f, file: filePath }))
-  } catch {
-    return []
+    return { provider: 'grok', success: true, findings: findings.map((f: LLMFinding) => ({ ...f, file: filePath })) }
+  } catch (e) {
+    return { provider: 'grok', success: false, error: e instanceof Error ? e.message : 'Unknown error', findings: [] }
   }
 }
 
-async function analyzeWithMistral(code: string, filePath: string, apiKey: string): Promise<LLMFinding[]> {
+async function analyzeWithMistral(code: string, filePath: string, apiKey: string): Promise<LLMResult> {
   try {
     const response = await fetch('https://api.mistral.ai/v1/chat/completions', {
       method: 'POST',
@@ -192,22 +207,29 @@ Return [] if no issues found. Return ONLY valid JSON array, no other text.`
       }),
     })
 
-    if (!response.ok) return []
+    if (!response.ok) {
+      return { provider: 'mistral', success: false, error: `API error: ${response.status}`, findings: [] }
+    }
     const data = await response.json()
     const text = data.choices?.[0]?.message?.content || '[]'
     const jsonMatch = text.match(/\[[\s\S]*\]/)
-    if (!jsonMatch) return []
+    if (!jsonMatch) return { provider: 'mistral', success: true, findings: [] }
     const findings = JSON.parse(jsonMatch[0])
-    return findings.map((f: LLMFinding) => ({ ...f, file: filePath }))
-  } catch {
-    return []
+    return { provider: 'mistral', success: true, findings: findings.map((f: LLMFinding) => ({ ...f, file: filePath })) }
+  } catch (e) {
+    return { provider: 'mistral', success: false, error: e instanceof Error ? e.message : 'Unknown error', findings: [] }
   }
 }
 
 type ApiKeys = NonNullable<ScanRequest['apiKeys']>
 
-async function runLLMAnalysis(code: string, filePath: string, apiKeys: ApiKeys): Promise<LLMFinding[]> {
-  const analyses: Promise<LLMFinding[]>[] = []
+interface LLMAnalysisResult {
+  findings: LLMFinding[]
+  status: { provider: string; success: boolean; error?: string }[]
+}
+
+async function runLLMAnalysis(code: string, filePath: string, apiKeys: ApiKeys): Promise<LLMAnalysisResult> {
+  const analyses: Promise<LLMResult>[] = []
 
   if (apiKeys.anthropic) analyses.push(analyzeWithAnthropic(code, filePath, apiKeys.anthropic))
   if (apiKeys.openai) analyses.push(analyzeWithOpenAI(code, filePath, apiKeys.openai))
@@ -215,10 +237,14 @@ async function runLLMAnalysis(code: string, filePath: string, apiKeys: ApiKeys):
   if (apiKeys.grok) analyses.push(analyzeWithGrok(code, filePath, apiKeys.grok))
   if (apiKeys.mistral) analyses.push(analyzeWithMistral(code, filePath, apiKeys.mistral))
 
-  if (analyses.length === 0) return []
+  if (analyses.length === 0) return { findings: [], status: [] }
 
   const results = await Promise.all(analyses)
-  return results.flat()
+
+  const findings = results.flatMap(r => r.findings)
+  const status = results.map(r => ({ provider: r.provider, success: r.success, error: r.error }))
+
+  return { findings, status }
 }
 
 interface Finding {
@@ -245,6 +271,7 @@ interface ScanResult {
   scannedAt: string
   repoUrl: string
   filesScanned: number
+  llmStatus?: { provider: string; success: boolean; error?: string }[]
 }
 
 // Secret patterns to detect
@@ -809,6 +836,7 @@ export async function POST(request: NextRequest) {
     const findings: Finding[] = []
     const findingId = { value: 1 }
     let filesScanned = 0
+    let llmStatus: { provider: string; success: boolean; error?: string }[] = []
 
     try {
       // Fetch repo tree
@@ -856,10 +884,31 @@ export async function POST(request: NextRequest) {
       if (hasApiKeys && llmFilesToAnalyze.length > 0 && apiKeys) {
         const llmPromises = llmFilesToAnalyze.map(f => runLLMAnalysis(f.content, f.path, apiKeys))
         const llmResults = await Promise.all(llmPromises)
-        const llmFindings = llmResults.flat()
+
+        // Collect all findings
+        const allLlmFindings = llmResults.flatMap(r => r.findings)
+
+        // Aggregate status across all files (dedupe by provider, mark failed if any failed)
+        const statusMap = new Map<string, { success: boolean; error?: string }>()
+        for (const result of llmResults) {
+          for (const s of result.status) {
+            const existing = statusMap.get(s.provider)
+            if (!existing) {
+              statusMap.set(s.provider, { success: s.success, error: s.error })
+            } else if (!s.success) {
+              // If any call failed, mark as failed
+              statusMap.set(s.provider, { success: false, error: s.error })
+            }
+          }
+        }
+        llmStatus = Array.from(statusMap.entries()).map(([provider, status]) => ({
+          provider,
+          success: status.success,
+          error: status.error,
+        }))
 
         // Add LLM findings with unique IDs
-        for (const llmFinding of llmFindings) {
+        for (const llmFinding of allLlmFindings) {
           findings.push({
             id: String(findingId.value++),
             title: `[AI] ${llmFinding.title}`,
@@ -930,6 +979,7 @@ export async function POST(request: NextRequest) {
       scannedAt: new Date().toISOString(),
       repoUrl,
       filesScanned,
+      llmStatus: llmStatus.length > 0 ? llmStatus : undefined,
     }
 
     return NextResponse.json(result)
