@@ -187,13 +187,14 @@ export default function Home() {
                 <Sparkles className="w-5 h-5 text-purple-500" />
               </div>
               <p className="text-gray-700 leading-relaxed">
-                Learning to code is a journey, and <strong>vibe coding</strong> lets you build amazing things
-                without years of traditional training. But here's the thing — <em>we don't know what we don't know</em>.
-                You can fix bugs you spot, but what about the security holes you've never been taught to see?
+                You know what grinds my gears? Those "10 years experience" developers acting like you need a
+                computer science degree to build apps. Meanwhile, I'm over here telling AI to <em>"make it work"</em> and
+                it just... works. No rules, no gatekeepers, just vibes and shipping.
               </p>
               <p className="text-gray-700 leading-relaxed mt-3">
-                That's why we built this. <strong>Vibe Check</strong> reveals your blind spots — the "unknown unknowns" —
-                so you can ship with confidence. Your imagination is your only limit. Let's make sure the code keeps up.
+                But here's the thing — we don't know what we don't know. Your code runs fine until some hacker
+                finds that API key you accidentally left in there. That's why we built this. <strong>Vibe Check</strong> catches
+                the stuff you never learned to look for. Keep vibing, keep shipping — we'll watch your back.
               </p>
             </div>
 
