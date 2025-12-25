@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Shield, Github, AlertTriangle, CheckCircle, Lock, Loader2, ArrowRight, Download, Sparkles, ExternalLink, Key, ChevronDown, ChevronUp, Brain } from 'lucide-react'
+import { Shield, Github, AlertTriangle, CheckCircle, Lock, Loader2, ArrowRight, Download, Sparkles, ExternalLink, Key } from 'lucide-react'
 
 type ScanStatus = 'idle' | 'scanning' | 'complete' | 'error'
 
@@ -44,7 +44,6 @@ export default function Home() {
     grok: '',
     mistral: '',
   })
-  const [showApiKeys, setShowApiKeys] = useState(false)
 
   // Load stored tokens on mount
   useEffect(() => {
@@ -363,80 +362,73 @@ export default function Home() {
               </div>
             </div>
 
-            {/* AI API Keys Section */}
-            <div className="glass rounded-2xl p-6 space-y-4">
+            {/* AI API Keys Section - Required */}
+            <div className="glass rounded-2xl p-6 space-y-4 border-2 border-purple-300">
               <div className="flex items-center gap-3">
                 <div className="w-8 h-8 bg-purple-600 text-white rounded-full flex items-center justify-center font-bold">
                   2
                 </div>
-                <h3 className="text-xl font-semibold text-gray-800">AI-Powered Analysis (Optional)</h3>
+                <h3 className="text-xl font-semibold text-gray-800">Add AI Models</h3>
+                <span className="bg-purple-100 text-purple-700 text-xs px-2 py-1 rounded-full font-medium">Required</span>
               </div>
 
               <p className="text-sm text-gray-600">
-                Add API keys to enable multiple AI models to analyze your code for deeper security insights.
-                The more models you add, the more comprehensive the analysis.
+                Add at least one AI model to scan your code. <strong>The more models you add, the better the security analysis</strong> — each AI catches different vulnerabilities.
               </p>
 
-              <button
-                onClick={() => setShowApiKeys(!showApiKeys)}
-                className="w-full flex items-center justify-between bg-purple-50 hover:bg-purple-100 rounded-xl p-4 transition-colors"
-              >
-                <span className="flex items-center gap-2 text-purple-700 font-medium">
-                  <Brain className="w-5 h-5" />
-                  Configure AI Models
-                  {Object.values(apiKeys).filter(k => k).length > 0 && (
-                    <span className="bg-purple-600 text-white text-xs px-2 py-0.5 rounded-full">
-                      {Object.values(apiKeys).filter(k => k).length} configured
-                    </span>
-                  )}
-                </span>
-                {showApiKeys ? <ChevronUp className="w-5 h-5 text-purple-600" /> : <ChevronDown className="w-5 h-5 text-purple-600" />}
-              </button>
-
-              {showApiKeys && (
-                <div className="space-y-3 pt-2">
-                  {llmProviders.map((provider) => (
-                    <div key={provider.id} className="bg-gray-50 rounded-lg p-3 space-y-2">
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm font-medium text-gray-700 flex items-center gap-2">
-                          <Key className="w-4 h-4" />
-                          {provider.name}
-                        </span>
-                        <a
-                          href={provider.url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-xs text-primary-600 hover:text-primary-700 flex items-center gap-1"
-                        >
-                          Get API key <ExternalLink className="w-3 h-3" />
-                        </a>
-                      </div>
-                      <input
-                        type="password"
-                        placeholder={provider.placeholder}
-                        value={apiKeys[provider.id]}
-                        onChange={(e) => handleApiKeyChange(provider.id, e.target.value)}
-                        className="w-full px-3 py-2 rounded-lg border border-gray-200 focus:border-primary-500 focus:outline-none text-sm"
-                      />
-                      {apiKeys[provider.id] && (
-                        <p className="text-xs text-green-600 flex items-center gap-1">
-                          <CheckCircle className="w-3 h-3" />
-                          Configured
-                        </p>
-                      )}
-                    </div>
-                  ))}
-                  <p className="text-xs text-gray-500 pt-2">
-                    Keys are stored in your browser only. We never save them to any server.
-                  </p>
+              {Object.values(apiKeys).filter(k => k).length > 0 && (
+                <div className="bg-green-50 border border-green-200 rounded-lg p-3 flex items-center gap-2">
+                  <CheckCircle className="w-5 h-5 text-green-600" />
+                  <span className="text-green-700 font-medium">
+                    {Object.values(apiKeys).filter(k => k).length} AI model{Object.values(apiKeys).filter(k => k).length > 1 ? 's' : ''} configured
+                  </span>
                 </div>
               )}
+
+              <div className="space-y-3">
+                {llmProviders.map((provider) => (
+                  <div key={provider.id} className={`rounded-lg p-3 space-y-2 ${apiKeys[provider.id] ? 'bg-green-50 border border-green-200' : 'bg-gray-50'}`}>
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm font-medium text-gray-700 flex items-center gap-2">
+                        <Key className="w-4 h-4" />
+                        {provider.name}
+                        {apiKeys[provider.id] && <CheckCircle className="w-4 h-4 text-green-600" />}
+                      </span>
+                      <a
+                        href={provider.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-xs text-primary-600 hover:text-primary-700 flex items-center gap-1"
+                      >
+                        Get API key <ExternalLink className="w-3 h-3" />
+                      </a>
+                    </div>
+                    <input
+                      type="password"
+                      placeholder={provider.placeholder}
+                      value={apiKeys[provider.id]}
+                      onChange={(e) => handleApiKeyChange(provider.id, e.target.value)}
+                      className="w-full px-3 py-2 rounded-lg border border-gray-200 focus:border-primary-500 focus:outline-none text-sm"
+                    />
+                  </div>
+                ))}
+                <p className="text-xs text-gray-500 pt-2">
+                  Keys are stored in your browser only. We never save them to any server.
+                </p>
+              </div>
             </div>
 
             {error && (
               <div className="bg-red-50 border border-red-200 rounded-xl p-4 text-red-600 flex items-start gap-2">
                 <AlertTriangle className="w-5 h-5 flex-shrink-0 mt-0.5" />
                 {error}
+              </div>
+            )}
+
+            {Object.values(apiKeys).filter(k => k).length === 0 && (
+              <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 text-amber-700 flex items-start gap-2">
+                <AlertTriangle className="w-5 h-5 flex-shrink-0 mt-0.5" />
+                <span>Add at least one AI model API key above to start scanning</span>
               </div>
             )}
 
@@ -449,11 +441,11 @@ export default function Home() {
               </button>
               <button
                 onClick={handleStartScan}
-                disabled={!repoUrl}
+                disabled={!repoUrl || Object.values(apiKeys).filter(k => k).length === 0}
                 className="bg-primary-600 hover:bg-primary-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white px-8 py-3 rounded-xl font-semibold flex items-center gap-2 transition-all hover:scale-105 disabled:hover:scale-100"
               >
                 <Shield className="w-5 h-5" />
-                Start Security Scan
+                Start AI Security Scan
               </button>
             </div>
           </div>
@@ -478,11 +470,11 @@ export default function Home() {
                 </div>
                 <div className="flex items-center gap-3">
                   <Loader2 className="w-5 h-5 text-primary-500 animate-spin" />
-                  <span className="text-gray-700">Scanning files for secrets...</span>
+                  <span className="text-gray-700">Running pattern analysis...</span>
                 </div>
-                <div className="flex items-center gap-3 opacity-50">
-                  <div className="w-5 h-5 rounded-full border-2 border-gray-300" />
-                  <span className="text-gray-500">Checking for vulnerabilities...</span>
+                <div className="flex items-center gap-3">
+                  <Loader2 className="w-5 h-5 text-purple-500 animate-spin" />
+                  <span className="text-gray-700">AI models analyzing code...</span>
                 </div>
                 <div className="flex items-center gap-3 opacity-50">
                   <div className="w-5 h-5 rounded-full border-2 border-gray-300" />
