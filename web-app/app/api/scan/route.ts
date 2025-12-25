@@ -833,7 +833,17 @@ export async function POST(request: NextRequest) {
             const isImportant = ['ts', 'tsx', 'js', 'jsx', 'py', 'go', 'java', 'rb', 'php'].includes(ext || '')
             const isRoute = file.path.includes('route') || file.path.includes('api') || file.path.includes('auth')
             const isConfig = file.path.includes('.env') || file.path.includes('config')
-            if (isImportant || isRoute || isConfig) {
+
+            // Skip security scanner/pattern files to avoid false positives (AI flagging pattern definitions)
+            const isSecurityScanner = file.path.includes('scan') ||
+              file.path.includes('security') ||
+              file.path.includes('pattern') ||
+              file.path.includes('vuln') ||
+              file.path.includes('detector') ||
+              file.path.includes('analyzer') ||
+              file.path.includes('checker')
+
+            if ((isImportant || isRoute || isConfig) && !isSecurityScanner) {
               llmFilesToAnalyze.push({ path: file.path, content })
             }
           }
@@ -924,8 +934,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json(result)
 
-  } catch (error) {
-    console.error('Scan error:', error)
+  } catch {
     return NextResponse.json(
       { error: 'Failed to scan repository. Please try again.' },
       { status: 500 }
