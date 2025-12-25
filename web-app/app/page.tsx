@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Shield, Github, AlertTriangle, CheckCircle, Lock, Loader2, ArrowRight, Download, Sparkles, ExternalLink } from 'lucide-react'
+import { Shield, Github, AlertTriangle, CheckCircle, Lock, Loader2, ArrowRight, Download, Sparkles, ExternalLink, Key, ChevronDown, ChevronUp, Brain } from 'lucide-react'
 
 type ScanStatus = 'idle' | 'scanning' | 'complete' | 'error'
 
@@ -36,11 +36,28 @@ export default function Home() {
   // GitHub token state (Personal Access Token)
   const [githubToken, setGithubToken] = useState('')
 
-  // Load stored GitHub token on mount
+  // LLM API keys state
+  const [apiKeys, setApiKeys] = useState({
+    anthropic: '',
+    openai: '',
+    gemini: '',
+    grok: '',
+    mistral: '',
+  })
+  const [showApiKeys, setShowApiKeys] = useState(false)
+
+  // Load stored tokens on mount
   useEffect(() => {
     const storedToken = localStorage.getItem('github_token')
     if (storedToken) {
       setGithubToken(storedToken)
+    }
+    // Load LLM API keys
+    const storedApiKeys = localStorage.getItem('llm_api_keys')
+    if (storedApiKeys) {
+      try {
+        setApiKeys(JSON.parse(storedApiKeys))
+      } catch {}
     }
   }, [])
 
@@ -53,6 +70,22 @@ export default function Home() {
       localStorage.removeItem('github_token')
     }
   }
+
+  // Save LLM API key to localStorage
+  const handleApiKeyChange = (provider: keyof typeof apiKeys, key: string) => {
+    const newKeys = { ...apiKeys, [provider]: key }
+    setApiKeys(newKeys)
+    localStorage.setItem('llm_api_keys', JSON.stringify(newKeys))
+  }
+
+  // LLM providers config
+  const llmProviders = [
+    { id: 'anthropic', name: 'Anthropic (Claude)', placeholder: 'sk-ant-...', url: 'https://console.anthropic.com/settings/keys' },
+    { id: 'openai', name: 'OpenAI (GPT)', placeholder: 'sk-...', url: 'https://platform.openai.com/api-keys' },
+    { id: 'gemini', name: 'Google (Gemini)', placeholder: 'AI...', url: 'https://aistudio.google.com/app/apikey' },
+    { id: 'grok', name: 'xAI (Grok)', placeholder: 'xai-...', url: 'https://console.x.ai/' },
+    { id: 'mistral', name: 'Mistral', placeholder: 'M...', url: 'https://console.mistral.ai/api-keys' },
+  ] as const
 
   // Generate markdown report
   const generateReport = () => {
@@ -325,6 +358,76 @@ export default function Home() {
                   </p>
                 )}
               </div>
+            </div>
+
+            {/* AI API Keys Section */}
+            <div className="glass rounded-2xl p-6 space-y-4">
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 bg-purple-600 text-white rounded-full flex items-center justify-center font-bold">
+                  2
+                </div>
+                <h3 className="text-xl font-semibold text-gray-800">AI-Powered Analysis (Optional)</h3>
+              </div>
+
+              <p className="text-sm text-gray-600">
+                Add API keys to enable multiple AI models to analyze your code for deeper security insights.
+                The more models you add, the more comprehensive the analysis.
+              </p>
+
+              <button
+                onClick={() => setShowApiKeys(!showApiKeys)}
+                className="w-full flex items-center justify-between bg-purple-50 hover:bg-purple-100 rounded-xl p-4 transition-colors"
+              >
+                <span className="flex items-center gap-2 text-purple-700 font-medium">
+                  <Brain className="w-5 h-5" />
+                  Configure AI Models
+                  {Object.values(apiKeys).filter(k => k).length > 0 && (
+                    <span className="bg-purple-600 text-white text-xs px-2 py-0.5 rounded-full">
+                      {Object.values(apiKeys).filter(k => k).length} configured
+                    </span>
+                  )}
+                </span>
+                {showApiKeys ? <ChevronUp className="w-5 h-5 text-purple-600" /> : <ChevronDown className="w-5 h-5 text-purple-600" />}
+              </button>
+
+              {showApiKeys && (
+                <div className="space-y-3 pt-2">
+                  {llmProviders.map((provider) => (
+                    <div key={provider.id} className="bg-gray-50 rounded-lg p-3 space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm font-medium text-gray-700 flex items-center gap-2">
+                          <Key className="w-4 h-4" />
+                          {provider.name}
+                        </span>
+                        <a
+                          href={provider.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-xs text-primary-600 hover:text-primary-700 flex items-center gap-1"
+                        >
+                          Get API key <ExternalLink className="w-3 h-3" />
+                        </a>
+                      </div>
+                      <input
+                        type="password"
+                        placeholder={provider.placeholder}
+                        value={apiKeys[provider.id]}
+                        onChange={(e) => handleApiKeyChange(provider.id, e.target.value)}
+                        className="w-full px-3 py-2 rounded-lg border border-gray-200 focus:border-primary-500 focus:outline-none text-sm"
+                      />
+                      {apiKeys[provider.id] && (
+                        <p className="text-xs text-green-600 flex items-center gap-1">
+                          <CheckCircle className="w-3 h-3" />
+                          Configured
+                        </p>
+                      )}
+                    </div>
+                  ))}
+                  <p className="text-xs text-gray-500 pt-2">
+                    Keys are stored in your browser only. We never save them to any server.
+                  </p>
+                </div>
+              )}
             </div>
 
             {error && (
