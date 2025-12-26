@@ -8,10 +8,10 @@
 
 | Severity | Count |
 |----------|-------|
-| Critical | 1 |
-| High | 22 |
-| Medium | 54 |
-| Low | 6 |
+| Critical | 2 |
+| High | 25 |
+| Medium | 48 |
+| Low | 7 |
 
 ## Issues to Fix
 
@@ -27,33 +27,33 @@ Please review and fix the following security issues:
 
 ---
 
-### 2. [HIGH] [AI] Potential Injection Vulnerability
+### 2. [HIGH] [AI] Untrusted Data Input
 
-**Category:** Security
+**Category:** Input Validation
 
-**Description:** The code uses user input (from the `page_context` parameter) directly in the `analysis_prompt` string, which could lead to potential injection vulnerabilities if the input is not properly sanitized.
+**Description:** The code uses user-supplied data (persona) without properly validating or sanitizing it. This could lead to potential security issues such as injection attacks.
 
-**Location:** `ai_flow_tester/src/generators.py:84`
-
----
-
-### 3. [MEDIUM] [AI] Potential Sensitive Information Disclosure
-
-**Category:** Security
-
-**Description:** The `page_context` parameter contains sensitive information such as HTML, elements, and visible text, which could be exposed to the LLM provider if not properly handled.
-
-**Location:** `ai_flow_tester/src/generators.py:84`
+**Location:** `ai_flow_tester/src/generators.py:49`
 
 ---
 
-### 4. [HIGH] [AI] Exposure of Sensitive Information
+### 3. [CRITICAL] [AI] Hardcoded Credentials
 
-**Category:** Data Exposure
+**Category:** Sensitive Information Exposure
 
-**Description:** The page_context parameter may contain sensitive information that could be exposed via the generated analysis prompt, especially if the `url` or other parameters contain user-specific data.
+**Description:** The code contains hardcoded credentials (API keys, tokens, etc.) that could be exposed and used by attackers.
 
-**Location:** `ai_flow_tester/src/generators.py:71`
+**Location:** `ai_flow_tester/src/generators.py:82`
+
+---
+
+### 4. [HIGH] [AI] Exposure of Internal Logic
+
+**Category:** Information Exposure
+
+**Description:** The 'generate_journey' function exposes internal logic through generated prompts that include potential sensitive data like page_context details. This could lead to accidental information leakage or intelligent attacks if insights are gained from the generated prompts.
+
+**Location:** `ai_flow_tester/src/generators.py:76`
 
 ---
 
@@ -61,59 +61,59 @@ Please review and fix the following security issues:
 
 **Category:** Input Validation
 
-**Description:** The URL and other parameters are directly used without validation, which could lead to injection attacks or unexpected behavior if user-controlled inputs are provided.
+**Description:** The inputs to the 'generate_journey' method (like 'url', 'page_context') are not validated. This can lead to security issues such as injection attacks or processing malicious data if not properly handled.
 
-**Location:** `ai_flow_tester/src/generators.py:78`
-
----
-
-### 6. [MEDIUM] [AI] Potential for DoS via High max_steps
-
-**Category:** Denial of Service
-
-**Description:** The max_steps parameter could be manipulated to request an excessive number of operations, potentially leading to resource exhaustion or denial of service.
-
-**Location:** `ai_flow_tester/src/generators.py:77`
+**Location:** `ai_flow_tester/src/generators.py:63`
 
 ---
 
-### 7. [MEDIUM] [AI] Insufficient Rate Limiting
+### 6. [MEDIUM] [AI] Potential for Insecure Usage of External LLM Outputs
 
-**Category:** Rate Limiting
+**Category:** External Dependency Security
 
-**Description:** The query method does not appear to implement any rate limiting, which could allow for abuse through repeated requests, impacting performance or leading to service outages.
+**Description:** The outputs of the LLM query are not validated or sanitized before being used, which may lead to unsafe operations or further security issues downstream.
 
-**Location:** `ai_flow_tester/src/generators.py:78`
+**Location:** `ai_flow_tester/src/generators.py:84`
 
 ---
 
-### 8. [HIGH] [AI] Hardcoded Credentials or Sensitive Information
+### 7. [HIGH] [AI] Hardcoded Credentials or Sensitive Information
 
 **Category:** Sensitive Data Exposure
 
 **Description:** The code contains a hardcoded URL and page context which might expose sensitive information if not properly sanitized.
 
-**Location:** `ai_flow_tester/src/generators.py:82`
+**Location:** `ai_flow_tester/src/generators.py:70`
 
 ---
 
-### 9. [MEDIUM] [AI] Unvalidated User Input
-
-**Category:** Injection
-
-**Description:** The `url` parameter is directly interpolated into the prompt without validation, potentially allowing injection attacks.
-
-**Location:** `ai_flow_tester/src/generators.py:82`
-
----
-
-### 10. [MEDIUM] [AI] Insecure Direct Object Reference
+### 8. [MEDIUM] [AI] Insecure Direct Object Reference
 
 **Category:** Access Control
 
-**Description:** The `persona` parameter is used to select a configuration from a dictionary without proper validation, which could allow access to unintended configurations.
+**Description:** The `persona` parameter is directly used without validation, which could allow unauthorized access to different user personas.
 
-**Location:** `ai_flow_tester/src/generators.py:78`
+**Location:** `ai_flow_tester/src/generators.py:50`
+
+---
+
+### 9. [HIGH] [AI] Potential Injection Vulnerability
+
+**Category:** Injection
+
+**Description:** The `url` parameter is directly interpolated into the prompt without sanitization, which could lead to prompt injection attacks.
+
+**Location:** `ai_flow_tester/src/generators.py:70`
+
+---
+
+### 10. [MEDIUM] [AI] Insufficient Input Validation
+
+**Category:** Input Validation
+
+**Description:** The `page_context` parameter is used without validation, which could lead to unexpected behavior or security issues.
+
+**Location:** `ai_flow_tester/src/generators.py:48`
 
 ---
 
@@ -121,19 +121,19 @@ Please review and fix the following security issues:
 
 **Category:** Data Exposure
 
-**Description:** The visible text preview is truncated to 2000 characters, but this might still expose sensitive information if not properly sanitized.
+**Description:** The visible text preview is truncated to 2000 characters, but this might still expose sensitive information if not properly handled.
 
-**Location:** `ai_flow_tester/src/generators.py:85`
+**Location:** `ai_flow_tester/src/generators.py:72`
 
 ---
 
-### 12. [LOW] [AI] Potential Information Leakage
+### 12. [MEDIUM] [AI] Potential Denial of Service
 
-**Category:** Information Disclosure
+**Category:** Denial of Service
 
-**Description:** The interactive elements are limited to 30 items, but this might still expose sensitive information if not properly sanitized.
+**Description:** The `max_steps` parameter is not validated, which could allow an attacker to generate an excessively large number of steps, leading to resource exhaustion.
 
-**Location:** `ai_flow_tester/src/generators.py:88`
+**Location:** `ai_flow_tester/src/generators.py:52`
 
 ---
 
@@ -141,79 +141,79 @@ Please review and fix the following security issues:
 
 **Category:** Security
 
-**Description:** The `value` and `expected` parameters of the `TestStep` dataclass are not sanitized, which could lead to potential Cross-Site Scripting (XSS) vulnerabilities if malicious input is used.
+**Description:** The code appears to be using user-provided input (e.g., `TestStep.selector`, `TestStep.value`, `TestStep.expected`) directly in the Playwright actions without any input validation or sanitization. This could potentially lead to a Cross-Site Scripting (XSS) vulnerability if the user-provided input contains malicious scripts.
 
-**Location:** `ai_flow_tester/src/runner.py:25`
+**Location:** `ai_flow_tester/src/runner.py:14`
 
 ---
 
-### 14. [MEDIUM] [AI] Potential Insecure Handling of Sensitive Data
+### 14. [MEDIUM] [AI] Lack of Input Validation
 
 **Category:** Security
 
-**Description:** The `TestRunResult` dataclass includes a `total_cost` field, which could potentially contain sensitive financial information. Ensure that this data is properly secured and not exposed in any reports or outputs.
+**Description:** The code does not perform any input validation on the user-provided values in the `TestStep` dataclass. This could lead to other types of vulnerabilities, such as SQL injection or command injection, if these values are used in unsafe ways later in the code.
 
-**Location:** `ai_flow_tester/src/runner.py:70`
+**Location:** `ai_flow_tester/src/runner.py:14`
 
 ---
 
-### 15. [HIGH] [AI] Potential File Inclusion Vulnerability
+### 15. [MEDIUM] [AI] Potential Sensitive Data Exposure
+
+**Category:** Security
+
+**Description:** The code appears to be saving screenshots in the `./test-videos` directory, which may contain sensitive information. It is important to ensure that these screenshots do not contain any sensitive data and that access to the directory is properly restricted.
+
+**Location:** `ai_flow_tester/src/runner.py:89`
+
+---
+
+### 16. [HIGH] [AI] Improper Input Validation
 
 **Category:** Input Validation
 
-**Description:** The _load_config method directly uses user-provided config_path to load files. If not validated, this may lead to directory traversal attacks allowing sensitive file exposure.
+**Description:** The 'url' parameter in the run method is used directly in the page.goto() call without validation, potentially allowing for open redirect or SSRF vulnerabilities.
 
-**Location:** `ai_flow_tester/src/runner.py:50`
-
----
-
-### 16. [MEDIUM] [AI] Missing Input Validation on URL Parameter
-
-**Category:** Input Validation
-
-**Description:** The run method accepts a URL parameter without validation, which can lead to SSRF (Server Side Request Forgery) or other injection attacks if an attacker provides a malicious URL.
-
-**Location:** `ai_flow_tester/src/runner.py:69`
+**Location:** `ai_flow_tester/src/runner.py:87`
 
 ---
 
-### 17. [MEDIUM] [AI] Sensitive Data Exposure in Configuration
+### 17. [MEDIUM] [AI] Sensitive Data Exposure
 
 **Category:** Data Protection
 
-**Description:** The configuration contains identifiers and API keys for LLM providers. If the configuration file is exposed, it may lead to unauthorized access to these services.
+**Description:** Configuration data loaded from files is not handled securely; sensitive information could be exposed if the configuration includes such data.
 
-**Location:** `ai_flow_tester/src/runner.py:39`
-
----
-
-### 18. [HIGH] [AI] Insecure Default Configuration
-
-**Category:** Configuration Management
-
-**Description:** The default configuration does not implement any security measures (e.g., no authentication, no rate limiting) for the playwriting tests, potentially exposing the test runner to abuse.
-
-**Location:** `ai_flow_tester/src/runner.py:39`
+**Location:** `ai_flow_tester/src/runner.py:55`
 
 ---
 
-### 19. [MEDIUM] [AI] Hardcoded Configuration Path
-
-**Category:** Configuration
-
-**Description:** The code uses hardcoded configuration paths ('.safeguard.yaml') which could lead to path traversal vulnerabilities if not properly validated.
-
-**Location:** `ai_flow_tester/src/runner.py:60`
-
----
-
-### 20. [HIGH] [AI] Unsafe YAML Loading
+### 18. [HIGH] [AI] Potential Insecure Deserialization
 
 **Category:** Deserialization
 
-**Description:** The code uses yaml.safe_load() to load configuration files, but doesn't validate or sanitize the input before loading. This could lead to arbitrary code execution if malicious YAML content is provided.
+**Description:** The use of yaml.safe_load without proper validation opens up the potential for YAML deserialization vulnerabilities, especially if malicious content is introduced into the configuration file.
 
-**Location:** `ai_flow_tester/src/runner.py:58`
+**Location:** `ai_flow_tester/src/runner.py:56`
+
+---
+
+### 19. [MEDIUM] [AI] Hardcoded Default Configuration
+
+**Category:** Configuration Management
+
+**Description:** The code has hardcoded default configuration values which could lead to security issues if not properly overridden. The default configuration includes sensitive settings like LLM providers and browser behavior.
+
+**Location:** `ai_flow_tester/src/runner.py:65`
+
+---
+
+### 20. [HIGH] [AI] Insecure File Handling
+
+**Category:** File Handling
+
+**Description:** The code reads YAML configuration files without proper validation or sanitization, which could lead to arbitrary code execution if malicious YAML content is provided.
+
+**Location:** `ai_flow_tester/src/runner.py:52`
 
 ---
 
@@ -221,289 +221,289 @@ Please review and fix the following security issues:
 
 **Category:** Input Validation
 
-**Description:** The run() method accepts a URL parameter without any validation, which could lead to SSRF (Server-Side Request Forgery) or other injection attacks.
+**Description:** The URL parameter passed to the run method is not validated or sanitized, which could lead to SSRF (Server-Side Request Forgery) or other injection attacks.
 
 **Location:** `ai_flow_tester/src/runner.py:85`
 
 ---
 
-### 22. [MEDIUM] [AI] No Error Handling for Browser Launch
+### 22. [CRITICAL] [AI] No Authentication for LLM Providers
+
+**Category:** Authentication
+
+**Description:** The MultiLLMClient is initialized without any authentication or API key management, which could expose sensitive LLM provider credentials or allow unauthorized access.
+
+**Location:** `ai_flow_tester/src/runner.py:45`
+
+---
+
+### 23. [MEDIUM] [AI] No Rate Limiting for LLM Calls
+
+**Category:** Rate Limiting
+
+**Description:** The code does not implement any rate limiting for LLM API calls, which could lead to excessive usage and potential denial of service.
+
+**Location:** `ai_flow_tester/src/runner.py:45`
+
+---
+
+### 24. [MEDIUM] [AI] No Error Handling for Browser Operations
 
 **Category:** Error Handling
 
-**Description:** The code doesn't handle potential errors when launching the browser or creating a new context, which could lead to unexpected crashes.
+**Description:** The code does not properly handle errors that might occur during browser operations, which could lead to unexpected behavior or crashes.
 
 **Location:** `ai_flow_tester/src/runner.py:90`
 
 ---
 
-### 23. [MEDIUM] [AI] No Timeout for Page Navigation
+### 25. [MEDIUM] [AI] No Timeout for LLM Operations
 
-**Category:** Timeout
+**Category:** Timeout Management
 
-**Description:** The page.goto() call doesn't specify a timeout, which could lead to indefinite hangs if the target URL is unresponsive.
+**Description:** The code does not set timeouts for LLM operations, which could lead to hanging or unresponsive behavior.
 
-**Location:** `ai_flow_tester/src/runner.py:101`
-
----
-
-### 24. [MEDIUM] [AI] No Cleanup on Failure
-
-**Category:** Resource Management
-
-**Description:** The code doesn't properly clean up browser resources if an error occurs during test execution, which could lead to resource leaks.
-
-**Location:** `ai_flow_tester/src/runner.py:101`
+**Location:** `ai_flow_tester/src/runner.py:45`
 
 ---
 
-### 25. [HIGH] [AI] Potential Hardcoded Credentials
+### 26. [MEDIUM] [AI] No Secure Default for Headless Mode
 
-**Category:** Credentials Management
+**Category:** Configuration Management
 
-**Description:** The code appears to be using hardcoded credentials, which can be a security vulnerability. Hardcoded credentials should be avoided, and sensitive information should be stored securely, such as in environment variables or a secure key management system.
+**Description:** The default configuration for headless mode is set to True, which might not be secure for all environments.
 
-**Location:** `ai_flow_tester/src/selectors.py`
-
----
-
-### 26. [MEDIUM] [AI] Lack of Input Validation
-
-**Category:** Input Validation
-
-**Description:** The code does not appear to perform any input validation on the `description` parameter passed to the `find_by_description` function. Lack of input validation can lead to security vulnerabilities such as injection attacks.
-
-**Location:** `ai_flow_tester/src/selectors.py:49`
+**Location:** `ai_flow_tester/src/runner.py:65`
 
 ---
 
-### 27. [MEDIUM] [AI] Potential Sensitive Data Exposure
-
-**Category:** Data Exposure
-
-**Description:** The code includes a preview of the HTML content, which may contain sensitive information. Sensitive data should be carefully handled and not exposed in logs or debugging output.
-
-**Location:** `ai_flow_tester/src/selectors.py:69`
-
----
-
-### 28. [HIGH] [AI] Improper Error Handling
-
-**Category:** Error Handling
-
-**Description:** The code does not log or handle exceptions when trying to locate an element. This can lead to silent failures, making debugging difficult.
-
-**Location:** `ai_flow_tester/src/selectors.py:51`
-
----
-
-### 29. [HIGH] [AI] Potential Injection via User Input
-
-**Category:** Injection
-
-**Description:** The `description` parameter is directly used in constructing dynamic prompts for the AI query, which could be exploited if not properly sanitized. This could lead to unexpected behavior or information disclosure.
-
-**Location:** `ai_flow_tester/src/selectors.py:40`
-
----
-
-### 30. [MEDIUM] [AI] Insufficient Validation of AI Response
-
-**Category:** Validation
-
-**Description:** The code does not validate or sanitize the CSS selector returned by the AI before using it, which could lead to malformed selectors or unexpected queries against the page.
-
-**Location:** `ai_flow_tester/src/selectors.py:66`
-
----
-
-### 31. [MEDIUM] [AI] Potential Denial of Service with Large HTML
-
-**Category:** Performance
-
-**Description:** The HTML content is being previewed in its entirety before being sent to the AI. If the HTML is too large, this could lead to performance issues or exceed token limits on the AI API.
-
-**Location:** `ai_flow_tester/src/selectors.py:19`
-
----
-
-### 32. [LOW] [AI] Sensitive Data Exposure
-
-**Category:** Data Exposure
-
-**Description:** The code could expose sensitive information if the HTML being processed contains sensitive data, which may be included in requests or logs unintentionally.
-
-**Location:** `ai_flow_tester/src/selectors.py:48`
-
----
-
-### 33. [HIGH] [AI] Potential HTML Injection via AI Prompt
-
-**Category:** Injection
-
-**Description:** The code constructs AI prompts using raw HTML content from the page, which could allow malicious HTML to be injected into the AI prompt if not properly sanitized.
-
-**Location:** `ai_flow_tester/src/selectors.py:45`
-
----
-
-### 34. [MEDIUM] [AI] Unsafe Exception Handling
-
-**Category:** Error Handling
-
-**Description:** The code uses bare except clauses which can catch unexpected exceptions and mask potential security issues.
-
-**Location:** `ai_flow_tester/src/selectors.py:53`
-
----
-
-### 35. [MEDIUM] [AI] Unsafe Exception Handling
-
-**Category:** Error Handling
-
-**Description:** The code uses bare except clauses which can catch unexpected exceptions and mask potential security issues.
-
-**Location:** `ai_flow_tester/src/selectors.py:68`
-
----
-
-### 36. [MEDIUM] [AI] Unsafe Exception Handling
-
-**Category:** Error Handling
-
-**Description:** The code uses bare except clauses which can catch unexpected exceptions and mask potential security issues.
-
-**Location:** `ai_flow_tester/src/selectors.py:81`
-
----
-
-### 37. [MEDIUM] [AI] Potential Information Exposure
-
-**Category:** Information Disclosure
-
-**Description:** The code includes raw HTML content in error messages and AI prompts, which could expose sensitive information if not properly sanitized.
-
-**Location:** `ai_flow_tester/src/selectors.py:45`
-
----
-
-### 38. [MEDIUM] [AI] Potential Denial of Service
-
-**Category:** Denial of Service
-
-**Description:** The code truncates HTML content to 20,000 or 25,000 characters for processing, which could be exploited to cause denial of service by providing excessively large HTML content.
-
-**Location:** `ai_flow_tester/src/selectors.py:46`
-
----
-
-### 39. [MEDIUM] [AI] Potential Denial of Service
-
-**Category:** Denial of Service
-
-**Description:** The code truncates HTML content to 20,000 or 25,000 characters for processing, which could be exploited to cause denial of service by providing excessively large HTML content.
-
-**Location:** `ai_flow_tester/src/selectors.py:73`
-
----
-
-### 40. [MEDIUM] [AI] Insecure Direct Object Reference
-
-**Category:** Access Control
-
-**Description:** The code uses raw descriptions as dictionary keys in the selector cache, which could allow for cache poisoning if an attacker can control the description input.
-
-**Location:** `ai_flow_tester/src/selectors.py:48`
-
----
-
-### 41. [HIGH] [AI] Hardcoded Credentials
-
-**Category:** Security
-
-**Description:** The code contains hardcoded credentials, which can be a security risk if the code is exposed or accessed by unauthorized users.
-
-**Location:** `run_flow_tests.py:77`
-
----
-
-### 42. [MEDIUM] [AI] Lack of Error Handling
-
-**Category:** Security
-
-**Description:** The code does not have proper error handling mechanisms, which can lead to unexpected behavior and potential security vulnerabilities.
-
-**Location:** `run_flow_tests.py:115`
-
----
-
-### 43. [MEDIUM] [AI] Insecure File Handling
-
-**Category:** Security
-
-**Description:** The code creates a directory for storing screenshots without proper permissions or access controls, which can lead to unauthorized access or data leaks.
-
-**Location:** `run_flow_tests.py:27`
-
----
-
-### 44. [LOW] [AI] Potential Timing Attacks
-
-**Category:** Security
-
-**Description:** The code does not have any measures to mitigate timing attacks, which can be used to extract sensitive information from the system.
-
-**Location:** `run_flow_tests.py:80`
-
----
-
-### 45. [MEDIUM] [AI] Insecure User-Agent Header
-
-**Category:** Security Misconfiguration
-
-**Description:** The user agent string is hardcoded, which can expose the application to user-agent-based attacks. It’s advisable to not rely on a fixed user agent.
-
-**Location:** `run_flow_tests.py:64`
-
----
-
-### 46. [HIGH] [AI] Dynamic Installation of Playwright
+### 27. [HIGH] [AI] Potential Injection Vulnerability
 
 **Category:** Code Injection
 
-**Description:** Installing libraries dynamically from the code can lead to remote code execution vulnerabilities if the source is compromised.
+**Description:** The code uses user-provided input (the `description` parameter) to generate a prompt for the language model without proper sanitization or validation. This could potentially lead to code injection vulnerabilities if the input contains malicious code.
 
-**Location:** `run_flow_tests.py:14`
-
----
-
-### 47. [MEDIUM] [AI] Error Handling Information Leak
-
-**Category:** Information Disclosure
-
-**Description:** Printing errors directly may expose sensitive internal information. It's better to log such details securely instead.
-
-**Location:** `run_flow_tests.py:91`
+**Location:** `ai_flow_tester/src/selectors.py:55`
 
 ---
 
-### 48. [MEDIUM] [AI] Hardcoded Credentials in User Agent
+### 28. [HIGH] [AI] Improper exception handling in locator checks
 
-**Category:** Information Exposure
+**Category:** Error handling
 
-**Description:** The user agent string contains hardcoded system information (Macintosh; Intel Mac OS X 10_15_7) which could be used for fingerprinting or targeting.
+**Description:** The code catches all exceptions without handling specific exceptions appropriately, making it difficult to identify the root cause of errors when locators fail. This could lead to silent failures.
 
-**Location:** `run_flow_tests.py:37`
+**Location:** `ai_flow_tester/src/selectors.py:36`
 
 ---
 
-### 49. [MEDIUM] [AI] No Error Handling for Playwright Installation
+### 29. [HIGH] [AI] Potential for injection in AI prompt
+
+**Category:** Input Validation
+
+**Description:** The description from an untrusted source is directly injected into the AI prompt without sanitization, creating a risk of prompt injection attacks.
+
+**Location:** `ai_flow_tester/src/selectors.py:52`
+
+---
+
+### 30. [MEDIUM] [AI] Selector cache does not expire or limit size
+
+**Category:** Resource Management
+
+**Description:** The selector cache does not implement any size limit or expiration mechanism, which could lead to excessive memory usage over time.
+
+**Location:** `ai_flow_tester/src/selectors.py:28`
+
+---
+
+### 31. [LOW] [AI] Use of deprecated string type hinting
+
+**Category:** Code Quality
+
+**Description:** The use of 'list[str]' in type hints might cause compatibility issues in older Python versions (prior to 3.9). Use 'List[str]' from 'typing' for broader compatibility.
+
+**Location:** `ai_flow_tester/src/selectors.py:12`
+
+---
+
+### 32. [MEDIUM] [AI] Hardcoded prompt structure
+
+**Category:** Maintenance
+
+**Description:** The AI prompt used for querying the model is hardcoded, making it difficult to modify or adjust its structure or the parameters it uses without altering the source code.
+
+**Location:** `ai_flow_tester/src/selectors.py:52`
+
+---
+
+### 33. [HIGH] [AI] Potential HTML Injection via AI-Generated Selectors
+
+**Category:** Injection
+
+**Description:** The code uses AI-generated selectors directly from HTML content without proper sanitization, which could lead to HTML injection if the AI response is maliciously crafted.
+
+**Location:** `ai_flow_tester/src/selectors.py:50`
+
+---
+
+### 34. [MEDIUM] [AI] Insecure Error Handling
 
 **Category:** Error Handling
 
-**Description:** The code attempts to install Playwright if not found but doesn't handle potential installation failures gracefully.
+**Description:** The code uses bare except clauses which can hide important exceptions and make debugging difficult. This could lead to security issues being overlooked.
+
+**Location:** `ai_flow_tester/src/selectors.py:55`
+
+---
+
+### 35. [MEDIUM] [AI] Potential Information Disclosure
+
+**Category:** Information Disclosure
+
+**Description:** The code sends large HTML previews (20,000 and 25,000 characters) to an external LLM service, which could contain sensitive information if not properly sanitized.
+
+**Location:** `ai_flow_tester/src/selectors.py:45`
+
+---
+
+### 36. [MEDIUM] [AI] Unvalidated External Input
+
+**Category:** Input Validation
+
+**Description:** The description parameter in find_by_description is used directly in selector generation without validation, which could lead to injection or other issues.
+
+**Location:** `ai_flow_tester/src/selectors.py:28`
+
+---
+
+### 37. [MEDIUM] [AI] Potential Denial of Service
+
+**Category:** Denial of Service
+
+**Description:** The code doesn't limit the size of the HTML content sent to the LLM service, which could lead to performance issues or denial of service if very large pages are processed.
+
+**Location:** `ai_flow_tester/src/selectors.py:45`
+
+---
+
+### 38. [LOW] [AI] Insecure Direct Object Reference
+
+**Category:** Access Control
+
+**Description:** The selector cache uses the description as a key without proper access control, which could potentially allow unauthorized access to cached selectors.
+
+**Location:** `ai_flow_tester/src/selectors.py:18`
+
+---
+
+### 39. [HIGH] [AI] Hardcoded Credentials
+
+**Category:** Sensitive Data Exposure
+
+**Description:** The code contains hardcoded credentials, which can be a security risk if the code is ever exposed.
+
+**Location:** `run_flow_tests.py:78`
+
+---
+
+### 40. [MEDIUM] [AI] Lack of Error Handling
+
+**Category:** Error Handling
+
+**Description:** The code does not handle exceptions properly, which can lead to unexpected behavior and potential security issues.
+
+**Location:** `run_flow_tests.py:67`
+
+---
+
+### 41. [MEDIUM] [AI] Insecure Playwright Configuration
+
+**Category:** Configuration
+
+**Description:** The Playwright configuration does not set the 'ignoreHTTPSErrors' option to 'true', which can lead to issues with HTTPS connections.
+
+**Location:** `run_flow_tests.py:54`
+
+---
+
+### 42. [HIGH] [AI] Insecure Dynamic URL Construction
+
+**Category:** URL Manipulation
+
+**Description:** The base_url can be potentially manipulated if not properly validated, leading to possible phishing or data exfiltration.
+
+**Location:** `run_flow_tests.py:42`
+
+---
+
+### 43. [MEDIUM] [AI] Uncaught Exceptions During Install
+
+**Category:** Error Handling
+
+**Description:** If the subprocess command fails during the playwright installation, the script will not handle the exception, potentially causing the program to crash.
+
+**Location:** `run_flow_tests.py:18`
+
+---
+
+### 44. [MEDIUM] [AI] Improper Handling of Installed Packages
+
+**Category:** Dependency Management
+
+**Description:** The script installs packages without verifying if they are already installed or logging the installation. This can lead to failures if the installation process hangs.
+
+**Location:** `run_flow_tests.py:17`
+
+---
+
+### 45. [LOW] [AI] Using Hardcoded User-Agent
+
+**Category:** Information Disclosure
+
+**Description:** Hardcoding a User-Agent string may expose the application to unforeseen issues, as server behavior could change based on the User-Agent.
+
+**Location:** `run_flow_tests.py:55`
+
+---
+
+### 46. [LOW] [AI] Lack of Input Validation on Test Cases
+
+**Category:** Input Validation
+
+**Description:** There is no validation of the flow names or logic that could lead to unexpected behavior or side effects during the testing process.
+
+**Location:** `run_flow_tests.py:56`
+
+---
+
+### 47. [MEDIUM] [AI] Hardcoded Credentials in User Agent
+
+**Category:** Information Exposure
+
+**Description:** The user agent string contains hardcoded system information (Macintosh; Intel Mac OS X 10_15_7) which could expose unnecessary details about the testing environment.
+
+**Location:** `run_flow_tests.py:42`
+
+---
+
+### 48. [MEDIUM] [AI] No Error Handling for Playwright Installation
+
+**Category:** Error Handling
+
+**Description:** The code attempts to install Playwright if not found but doesn't handle potential installation failures or permission issues.
 
 **Location:** `run_flow_tests.py:12`
+
+---
+
+### 49. [MEDIUM] [AI] No Rate Limiting or Throttling
+
+**Category:** Performance
+
+**Description:** The script doesn't implement any rate limiting or request throttling which could lead to performance issues or being blocked by the server.
+
+**Location:** `run_flow_tests.py`
 
 ---
 
@@ -511,339 +511,329 @@ Please review and fix the following security issues:
 
 **Category:** Input Validation
 
-**Description:** The base_url parameter is not validated before use, which could lead to unexpected behavior or security issues if an invalid URL is provided.
+**Description:** The base_url parameter isn't validated for proper URL format or scheme (http/https).
 
-**Location:** `run_flow_tests.py:30`
-
----
-
-### 51. [MEDIUM] [AI] No Rate Limiting or Throttling
-
-**Category:** Denial of Service
-
-**Description:** The script doesn't implement any rate limiting or throttling, which could make it vulnerable to abuse or denial of service attacks.
-
-**Location:** `run_flow_tests.py`
+**Location:** `run_flow_tests.py:36`
 
 ---
 
-### 52. [HIGH] [AI] No Authentication for Test Execution
+### 51. [LOW] [AI] No Cleanup of Screenshots Directory
 
-**Category:** Authentication
+**Category:** Resource Management
 
-**Description:** The script doesn't implement any authentication mechanism to prevent unauthorized execution of tests against the production site.
+**Description:** The script creates a screenshots directory but doesn't clean up old screenshots between runs.
 
-**Location:** `run_flow_tests.py`
-
----
-
-### 53. [MEDIUM] [AI] Sensitive Information in Error Messages
-
-**Category:** Information Exposure
-
-**Description:** Error messages are printed directly to the console, which could expose sensitive information if an error occurs.
-
-**Location:** `run_flow_tests.py:62`
+**Location:** `run_flow_tests.py:37`
 
 ---
 
-### 54. [MEDIUM] [AI] No Timeout for Playwright Operations
+### 52. [MEDIUM] [AI] No Timeout for Playwright Operations
 
 **Category:** Error Handling
 
-**Description:** Playwright operations don't have explicit timeouts, which could lead to hanging processes if the target site is slow or unresponsive.
+**Description:** The script doesn't set timeouts for Playwright operations which could lead to hanging if the site is unresponsive.
 
 **Location:** `run_flow_tests.py`
 
 ---
 
-### 55. [MEDIUM] [AI] No Secure Storage for Screenshots
+### 53. [HIGH] [AI] No Authentication for Production Testing
 
-**Category:** Data Protection
+**Category:** Authentication
 
-**Description:** Screenshots are stored in a local directory without any access controls or encryption, which could expose sensitive information if accessed by unauthorized users.
+**Description:** The script tests production flows without any authentication mechanism which could lead to unauthorized access if not properly controlled.
 
-**Location:** `run_flow_tests.py:33`
-
----
-
-### 56. [HIGH] [AI] Hardcoded Credentials
-
-**Category:** Secrets
-
-**Description:** The code contains hardcoded credentials, which can lead to security vulnerabilities if the application is compromised.
-
-**Location:** `shared/src/cli.py:52`
+**Location:** `run_flow_tests.py`
 
 ---
 
-### 57. [MEDIUM] [AI] Insecure HTTP Connection
+### 54. [HIGH] [AI] Hardcoded Credentials
 
-**Category:** Network Security
+**Category:** Security
 
-**Description:** The application is connecting to a web application over an insecure HTTP connection, which can expose sensitive data to potential attackers.
+**Description:** The code contains hardcoded credentials, which can be a security vulnerability if the credentials are sensitive or used in production.
 
-**Location:** `shared/src/cli.py:31`
-
----
-
-### 58. [MEDIUM] [AI] Outdated Dependencies
-
-**Category:** Dependencies
-
-**Description:** The project uses outdated dependencies, which may contain known security vulnerabilities.
-
-**Location:** `shared/src/cli.py`
+**Location:** `shared/src/cli.py:27`
 
 ---
 
-### 59. [HIGH] [AI] Insecure URL Handling
+### 55. [MEDIUM] [AI] Insecure Logging
+
+**Category:** Security
+
+**Description:** The code logs sensitive information, such as the URL and persona, which could potentially expose sensitive data.
+
+**Location:** `shared/src/cli.py:45`
+
+---
+
+### 56. [MEDIUM] [AI] Lack of Error Handling
+
+**Category:** Reliability
+
+**Description:** The code does not have proper error handling, which could lead to unexpected behavior or crashes in the event of an error.
+
+**Location:** `shared/src/cli.py:74`
+
+---
+
+### 57. [MEDIUM] [AI] Unsafe File Handling
+
+**Category:** Security
+
+**Description:** The code allows for arbitrary file paths to be specified as input, which could lead to directory traversal attacks or other file-related vulnerabilities.
+
+**Location:** `shared/src/cli.py:91`
+
+---
+
+### 58. [MEDIUM] [AI] Potential HTTP URL Handling
+
+**Category:** Information Disclosure
+
+**Description:** The code processes URLs without validation or sanitization, which may lead to issues if an attacker provides a malicious URL or if the URL points to a sensitive resource.
+
+**Location:** `shared/src/cli.py:14`
+
+---
+
+### 59. [HIGH] [AI] Path Traversal via Output Path
+
+**Category:** File Access
+
+**Description:** The output path is taken from user input without validation, which could allow for path traversal attacks. An attacker may specify a path outside of the intended output directory.
+
+**Location:** `shared/src/cli.py:38`
+
+---
+
+### 60. [HIGH] [AI] Execution of Async Function Without Error Handling
+
+**Category:** Error Handling
+
+**Description:** The async function 'run()' is called without any try/except handling, which could lead to unhandled exceptions crashing the application.
+
+**Location:** `shared/src/cli.py:28`
+
+---
+
+### 61. [HIGH] [AI] Command Injection via Checks and Compliance Options
+
+**Category:** Command Injection
+
+**Description:** The checks and compliance parameters are not validated or sanitized, potentially leading to command injection vulnerabilities if the parameters are used in shell commands.
+
+**Location:** `shared/src/cli.py:68`
+
+---
+
+### 62. [MEDIUM] [AI] Hardcoded Path Default
 
 **Category:** Input Validation
 
-**Description:** The application accepts a URL for testing without validating its format, which could lead to SSRF (Server-Side Request Forgery) attacks.
+**Description:** The scan command uses a default path of '.' (current directory) which could lead to unintended directory scanning if not explicitly specified.
 
-**Location:** `shared/src/cli.py:20`
-
----
-
-### 60. [MEDIUM] [AI] Missing Output Path Validation
-
-**Category:** File Handling
-
-**Description:** The output file path provided by the user is not validated, which may allow an attacker to overwrite critical files on the filesystem.
-
-**Location:** `shared/src/cli.py:29`
+**Location:** `shared/src/cli.py:54`
 
 ---
 
-### 61. [MEDIUM] [AI] Missing Configuration Path Validation
+### 63. [MEDIUM] [AI] Insecure Default Configuration
 
-**Category:** File Handling
+**Category:** Configuration Management
 
-**Description:** The configuration file path is accepted without validation, potentially allowing unsafe file reads.
-
-**Location:** `shared/src/cli.py:29`
-
----
-
-### 62. [MEDIUM] [AI] Improper Error Handling
-
-**Category:** Error Management
-
-**Description:** The application could expose sensitive information when exceptions occur, as it raises a generic exit code without logging the error details.
+**Description:** The config parameter is optional and not enforced, which could lead to insecure default configurations being used.
 
 **Location:** `shared/src/cli.py:55`
 
 ---
 
-### 63. [LOW] [AI] Default Persona Value Leaks Information
+### 64. [HIGH] [AI] Unvalidated User Input
 
-**Category:** Information Disclosure
+**Category:** Input Validation
 
-**Description:** The default 'persona' option may lead to the assumption that certain user paths are safe, which may not be the case, causing potential misuse.
+**Description:** The URL parameter in the test command is not validated for proper URL format before being used.
+
+**Location:** `shared/src/cli.py:15`
+
+---
+
+### 65. [MEDIUM] [AI] Insecure File Handling
+
+**Category:** File Handling
+
+**Description:** The output and config parameters accept file paths without validation, which could lead to directory traversal or other file system attacks.
+
+**Location:** `shared/src/cli.py:16`
+
+---
+
+### 66. [MEDIUM] [AI] Insecure Default Headless Mode
+
+**Category:** Configuration Management
+
+**Description:** The headless mode is enabled by default, which might not be appropriate for all environments and could lead to unexpected behavior.
 
 **Location:** `shared/src/cli.py:17`
 
 ---
 
-### 64. [MEDIUM] [AI] Hardcoded Path in Command Line Argument
+### 67. [MEDIUM] [AI] Incomplete Error Handling
 
-**Category:** Input Validation
+**Category:** Error Handling
 
-**Description:** The 'path' parameter in the 'scan' command defaults to '.' (current directory), which could lead to unintended directory scanning if not explicitly specified.
+**Description:** The code does not handle potential exceptions that might occur during file operations or network requests.
 
-**Location:** `shared/src/cli.py:50`
-
----
-
-### 65. [HIGH] [AI] Potential Path Traversal
-
-**Category:** Path Manipulation
-
-**Description:** The 'path' parameter in the 'scan' command is directly used without validation, which could allow path traversal attacks if user input is not properly sanitized.
-
-**Location:** `shared/src/cli.py:50`
+**Location:** `shared/src/cli.py`
 
 ---
 
-### 66. [MEDIUM] [AI] Unvalidated User Input
-
-**Category:** Input Validation
-
-**Description:** The 'url' parameter in the 'test' command is used directly without validation, which could lead to SSRF or other injection attacks if not properly sanitized.
-
-**Location:** `shared/src/cli.py:20`
-
----
-
-### 67. [MEDIUM] [AI] Insecure Default Configuration
+### 68. [MEDIUM] [AI] Insecure Default Compliance
 
 **Category:** Configuration Management
 
-**Description:** The 'headless' parameter in the 'test' command defaults to True, which might not be appropriate for all environments and could lead to unexpected behavior.
+**Description:** The compliance parameter is optional and not enforced, which could lead to non-compliant scans if not explicitly specified.
 
-**Location:** `shared/src/cli.py:22`
-
----
-
-### 68. [MEDIUM] [AI] Incomplete Error Handling
-
-**Category:** Error Handling
-
-**Description:** The code does not handle potential exceptions that might occur during the execution of the 'run' function, which could lead to crashes or information leakage.
-
-**Location:** `shared/src/cli.py:35`
+**Location:** `shared/src/cli.py:60`
 
 ---
 
-### 69. [MEDIUM] [AI] Potential Information Exposure
+### 69. [MEDIUM] [AI] Insecure Default Checks
 
-**Category:** Data Protection
+**Category:** Configuration Management
 
-**Description:** The 'config' parameter in both commands is used to load configuration files, but there is no validation or restriction on the file types or contents, which could lead to information exposure or injection attacks.
+**Description:** The checks parameter is optional and not enforced, which could lead to incomplete security scans if not explicitly specified.
 
-**Location:** `shared/src/cli.py:24`
-
----
-
-### 70. [CRITICAL] [AI] Hardcoded API Keys
-
-**Category:** Secrets Management
-
-**Description:** The code contains hardcoded API keys for Anthropic, OpenAI, Google, and XAI. This is a serious security vulnerability as it exposes sensitive credentials that could be used by malicious actors to access the respective services.
-
-**Location:** `shared/src/llm_client.py:32`
+**Location:** `shared/src/cli.py:59`
 
 ---
 
-### 71. [MEDIUM] [AI] Lack of Input Validation
+### 70. [HIGH] [AI] Hardcoded API Keys
 
-**Category:** Input Validation
+**Category:** Security Misconfiguration
 
-**Description:** The `query` method does not perform any input validation on the `prompt` and `system_prompt` parameters. This could lead to potential injection attacks if the input is not properly sanitized.
-
-**Location:** `shared/src/llm_client.py:71`
-
----
-
-### 72. [HIGH] [AI] Exposure of API Keys
-
-**Category:** Credentials Management
-
-**Description:** The code retrieves API keys from environment variables without validating their existence or handling the case when they are missing, which can lead to failures at runtime and expose the service to potential attacks.
-
-**Location:** `shared/src/llm_client.py:34`
-
----
-
-### 73. [HIGH] [AI] SQL Injection Risk in Query Parameters
-
-**Category:** Input Validation
-
-**Description:** The query method does not sanitize inputs, particularly the 'prompt' and 'system_prompt', which may lead to injection attacks if user input is not properly validated before making requests to the respective LLM providers.
-
-**Location:** `shared/src/llm_client.py:54`
-
----
-
-### 74. [MEDIUM] [AI] Error Handling in Asynchronous Queries
-
-**Category:** Error Handling
-
-**Description:** The 'query_all' method returns exceptions but does not handle them properly, potentially leading to missed errors that could be addressed or logged, which complicates troubleshooting and may expose sensitive operational details.
-
-**Location:** `shared/src/llm_client.py:73`
-
----
-
-### 75. [MEDIUM] [AI] 'max_tokens' Default Value Too High
-
-**Category:** Resource Management
-
-**Description:** The default value for 'max_tokens' is set to 4096, which could lead to high costs and resource consumption if the user does not explicitly set this value. This may result in unintentional resource exhaustion or overuse.
-
-**Location:** `shared/src/llm_client.py:48`
-
----
-
-### 76. [MEDIUM] [AI] Potential Race Condition in Concurrent Queries
-
-**Category:** Concurrency
-
-**Description:** The 'query_all' method does not manage concurrency effectively. If multiple calls to 'query' are made simultaneously, shared resources (like API rate limits) may not be handled correctly, potentially leading to throttling or failures.
-
-**Location:** `shared/src/llm_client.py:66`
-
----
-
-### 77. [HIGH] [AI] Hardcoded API Endpoint URL
-
-**Category:** Configuration
-
-**Description:** The Grok API endpoint URL is hardcoded ('https://api.x.ai/v1'), which could become outdated or incorrect if the service changes its endpoint.
+**Description:** The code hardcodes API keys for various LLM providers, which could lead to unauthorized access and potential misuse of these credentials.
 
 **Location:** `shared/src/llm_client.py:50`
 
 ---
 
-### 78. [MEDIUM] [AI] Environment Variables Without Validation
+### 71. [MEDIUM] [AI] Potential Input Injection Vulnerability
 
-**Category:** Configuration
+**Category:** Code Injection
 
-**Description:** API keys are loaded from environment variables without any validation or fallback mechanism, which could lead to runtime errors if the variables are not set.
+**Description:** The `query` and `query_all` methods accept user-provided input (prompt and system_prompt) without any input validation, which could lead to code injection vulnerabilities if the input is not properly sanitized.
 
-**Location:** `shared/src/llm_client.py:25`
+**Location:** `shared/src/llm_client.py:98`
 
 ---
 
-### 79. [MEDIUM] [AI] Exception Handling in query_all
+### 72. [HIGH] [AI] Exposure of API Keys
+
+**Category:** Configuration Management
+
+**Description:** The code retrieves API keys from environment variables without validation or fallback, which could lead to exposure of credentials if the environment variables are improperly configured or leaked.
+
+**Location:** `shared/src/llm_client.py:34`
+
+---
+
+### 73. [MEDIUM] [AI] No Rate Limiting or Throttling Mechanism
+
+**Category:** Denial of Service
+
+**Description:** The application lacks rate limiting or throttling mechanisms for queries to multiple LLM providers, which could lead to overloading the services and potential denial of service.
+
+**Location:** `shared/src/llm_client.py:77`
+
+---
+
+### 74. [MEDIUM] [AI] Potential for Incomplete Error Handling
 
 **Category:** Error Handling
 
-**Description:** The query_all method gathers exceptions but does not handle or log them properly, which could make debugging issues difficult.
+**Description:** The `query_all` method gathers results but ignores exceptions by filtering them out, which may lead to incomplete error handling or undetected failures in the queries.
 
 **Location:** `shared/src/llm_client.py:65`
 
 ---
 
-### 80. [MEDIUM] [AI] No Rate Limiting
+### 75. [MEDIUM] [AI] Lack of Input Validation
 
-**Category:** Performance
+**Category:** Input Validation
 
-**Description:** There is no rate limiting implemented for API calls, which could lead to excessive API usage and potential denial of service.
+**Description:** User input in the `prompt` and `system_prompt` parameters is not validated, which may allow injection attacks or other security issues.
+
+**Location:** `shared/src/llm_client.py:50`
+
+---
+
+### 76. [HIGH] [AI] Hardcoded API URLs
+
+**Category:** Configuration
+
+**Description:** The Grok client uses a hardcoded base URL (https://api.x.ai/v1) which could become invalid if the API endpoint changes or if the service is deprecated.
+
+**Location:** `shared/src/llm_client.py:52`
+
+---
+
+### 77. [MEDIUM] [AI] Environment Variables Without Validation
+
+**Category:** Configuration
+
+**Description:** API keys are read directly from environment variables without any validation or fallback mechanism. If the environment variables are not set, the application will fail silently or raise an exception.
 
 **Location:** `shared/src/llm_client.py:30`
 
 ---
 
-### 81. [MEDIUM] [AI] No Input Sanitization
+### 78. [MEDIUM] [AI] Exception Handling in Parallel Queries
+
+**Category:** Error Handling
+
+**Description:** The query_all method gathers exceptions but does not handle or log them, which could lead to undetected failures in parallel queries.
+
+**Location:** `shared/src/llm_client.py:65`
+
+---
+
+### 79. [MEDIUM] [AI] No Rate Limiting
+
+**Category:** Performance
+
+**Description:** The client does not implement any rate limiting, which could lead to excessive API calls and potential denial of service or cost overruns.
+
+**Location:** `shared/src/llm_client.py`
+
+---
+
+### 80. [MEDIUM] [AI] No Input Sanitization
 
 **Category:** Input Validation
 
 **Description:** The prompt and system_prompt parameters are not sanitized before being passed to the LLM providers, which could lead to injection attacks or unexpected behavior.
 
-**Location:** `shared/src/llm_client.py:40`
+**Location:** `shared/src/llm_client.py`
 
 ---
 
-### 82. [MEDIUM] [AI] No Timeout for API Calls
+### 81. [MEDIUM] [AI] No Timeout Configuration
 
 **Category:** Performance
 
-**Description:** There is no timeout set for API calls, which could lead to hanging requests if the API provider is slow or unresponsive.
+**Description:** The client does not configure timeouts for API calls, which could lead to hanging requests and resource exhaustion.
 
-**Location:** `shared/src/llm_client.py:40`
+**Location:** `shared/src/llm_client.py`
 
 ---
 
-### 83. [LOW] [AI] Hardcoded Model Names
+### 82. [LOW] [AI] Hardcoded Model Names
 
 **Category:** Configuration
 
-**Description:** Model names are hardcoded (e.g., 'gemini-2.0-flash-exp'), which could become outdated if the providers change their model names.
+**Description:** Model names are hardcoded (e.g., 'gemini-2.0-flash-exp'), which could become invalid if the models are deprecated or renamed.
 
-**Location:** `shared/src/llm_client.py:35`
+**Location:** `shared/src/llm_client.py:45`
 
 ---
 

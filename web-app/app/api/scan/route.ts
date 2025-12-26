@@ -862,16 +862,26 @@ export async function POST(request: NextRequest) {
             const isRoute = file.path.includes('route') || file.path.includes('api') || file.path.includes('auth')
             const isConfig = file.path.includes('.env') || file.path.includes('config')
 
-            // Skip security scanner/pattern files to avoid false positives (AI flagging pattern definitions)
-            const isSecurityScanner = file.path.includes('scan') ||
+            // Skip security scanner/pattern/test files to avoid false positives
+            const isExcluded = file.path.includes('scan') ||
               file.path.includes('security') ||
               file.path.includes('pattern') ||
               file.path.includes('vuln') ||
               file.path.includes('detector') ||
               file.path.includes('analyzer') ||
-              file.path.includes('checker')
+              file.path.includes('checker') ||
+              file.path.includes('test') ||
+              file.path.includes('spec') ||
+              file.path.includes('mock') ||
+              file.path.includes('fixture') ||
+              file.path.includes('example') ||
+              file.path.includes('sample') ||
+              file.path.includes('demo') ||
+              file.path.includes('cli.') ||
+              file.path.includes('shared/') ||
+              file.path.includes('flow')
 
-            if ((isImportant || isRoute || isConfig) && !isSecurityScanner) {
+            if ((isImportant || isRoute || isConfig) && !isExcluded) {
               llmFilesToAnalyze.push({ path: file.path, content })
             }
           }
