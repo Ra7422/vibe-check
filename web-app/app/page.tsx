@@ -13,6 +13,7 @@ interface Finding {
   description: string
   file?: string
   line?: number
+  source?: string
 }
 
 interface ScanResult {
@@ -568,11 +569,16 @@ export default function Home() {
                 results.findings.map((finding) => (
                   <div key={finding.id} className="glass rounded-xl p-6 space-y-3">
                     <div className="flex items-start justify-between">
-                      <div className="flex items-center gap-3">
+                      <div className="flex items-center gap-3 flex-wrap">
                         <span className={`px-3 py-1 rounded-full text-sm font-medium ${getSeverityColor(finding.severity)}`}>
                           {finding.severity.toUpperCase()}
                         </span>
                         <span className="text-sm text-gray-500">{finding.category}</span>
+                        {finding.source && (
+                          <span className="px-2 py-0.5 bg-purple-100 text-purple-700 rounded text-xs font-medium">
+                            {finding.source}
+                          </span>
+                        )}
                       </div>
                     </div>
 

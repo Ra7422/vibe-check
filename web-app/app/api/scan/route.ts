@@ -19,6 +19,7 @@ interface LLMFinding {
   description: string
   file?: string
   line?: number
+  source?: string
 }
 
 interface LLMResult {
@@ -63,7 +64,7 @@ Return [] if no issues found. Return ONLY valid JSON array, no other text.`
     const jsonMatch = text.match(/\[[\s\S]*\]/)
     if (!jsonMatch) return { provider: 'anthropic', success: true, findings: [] }
     const findings = JSON.parse(jsonMatch[0])
-    return { provider: 'anthropic', success: true, findings: findings.map((f: LLMFinding) => ({ ...f, file: filePath })) }
+    return { provider: 'anthropic', success: true, findings: findings.map((f: LLMFinding) => ({ ...f, file: filePath, source: 'Claude' })) }
   } catch (e) {
     return { provider: 'anthropic', success: false, error: e instanceof Error ? e.message : 'Unknown error', findings: [] }
   }
@@ -102,7 +103,7 @@ Return [] if no issues found. Return ONLY valid JSON array, no other text.`
     const jsonMatch = text.match(/\[[\s\S]*\]/)
     if (!jsonMatch) return { provider: 'openai', success: true, findings: [] }
     const findings = JSON.parse(jsonMatch[0])
-    return { provider: 'openai', success: true, findings: findings.map((f: LLMFinding) => ({ ...f, file: filePath })) }
+    return { provider: 'openai', success: true, findings: findings.map((f: LLMFinding) => ({ ...f, file: filePath, source: 'GPT' })) }
   } catch (e) {
     return { provider: 'openai', success: false, error: e instanceof Error ? e.message : 'Unknown error', findings: [] }
   }
@@ -138,7 +139,7 @@ Return [] if no issues found. Return ONLY valid JSON array, no other text.`
     const jsonMatch = text.match(/\[[\s\S]*\]/)
     if (!jsonMatch) return { provider: 'gemini', success: true, findings: [] }
     const findings = JSON.parse(jsonMatch[0])
-    return { provider: 'gemini', success: true, findings: findings.map((f: LLMFinding) => ({ ...f, file: filePath })) }
+    return { provider: 'gemini', success: true, findings: findings.map((f: LLMFinding) => ({ ...f, file: filePath, source: 'Gemini' })) }
   } catch (e) {
     return { provider: 'gemini', success: false, error: e instanceof Error ? e.message : 'Unknown error', findings: [] }
   }
@@ -178,7 +179,7 @@ Return [] if no issues found. Return ONLY valid JSON array, no other text.`
     const jsonMatch = text.match(/\[[\s\S]*\]/)
     if (!jsonMatch) return { provider: 'grok', success: true, findings: [] }
     const findings = JSON.parse(jsonMatch[0])
-    return { provider: 'grok', success: true, findings: findings.map((f: LLMFinding) => ({ ...f, file: filePath })) }
+    return { provider: 'grok', success: true, findings: findings.map((f: LLMFinding) => ({ ...f, file: filePath, source: 'Grok' })) }
   } catch (e) {
     return { provider: 'grok', success: false, error: e instanceof Error ? e.message : 'Unknown error', findings: [] }
   }
@@ -217,7 +218,7 @@ Return [] if no issues found. Return ONLY valid JSON array, no other text.`
     const jsonMatch = text.match(/\[[\s\S]*\]/)
     if (!jsonMatch) return { provider: 'mistral', success: true, findings: [] }
     const findings = JSON.parse(jsonMatch[0])
-    return { provider: 'mistral', success: true, findings: findings.map((f: LLMFinding) => ({ ...f, file: filePath })) }
+    return { provider: 'mistral', success: true, findings: findings.map((f: LLMFinding) => ({ ...f, file: filePath, source: 'Mistral' })) }
   } catch (e) {
     return { provider: 'mistral', success: false, error: e instanceof Error ? e.message : 'Unknown error', findings: [] }
   }
@@ -259,6 +260,7 @@ interface Finding {
   file?: string
   line?: number
   match?: string
+  source?: string
 }
 
 interface ScanResult {
@@ -937,6 +939,7 @@ export async function POST(request: NextRequest) {
             recommendation: 'AI-detected issue. Review and verify this finding.',
             file: llmFinding.file,
             line: llmFinding.line,
+            source: llmFinding.source,
           })
         }
       }
