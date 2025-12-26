@@ -587,6 +587,46 @@ function getLineNumber(content: string, matchIndex: number): number {
   return content.substring(0, matchIndex).split('\n').length
 }
 
+// Priority scoring for files - higher score = scan first
+function getFilePriority(path: string): number {
+  const lowerPath = path.toLowerCase()
+  let score = 0
+
+  // High priority: Security-critical files
+  if (lowerPath.includes('auth')) score += 100
+  if (lowerPath.includes('login')) score += 100
+  if (lowerPath.includes('password')) score += 100
+  if (lowerPath.includes('secret')) score += 100
+  if (lowerPath.includes('token')) score += 90
+  if (lowerPath.includes('session')) score += 90
+  if (lowerPath.includes('api/')) score += 80
+  if (lowerPath.includes('route')) score += 80
+  if (lowerPath.includes('middleware')) score += 70
+  if (lowerPath.includes('security')) score += 70
+
+  // Medium priority: Core application files
+  if (lowerPath.includes('page.')) score += 50
+  if (lowerPath.includes('server')) score += 50
+  if (lowerPath.includes('database') || lowerPath.includes('db')) score += 50
+  if (lowerPath.includes('config')) score += 40
+  if (lowerPath.includes('.env')) score += 100 // .env files are critical
+
+  // Lower priority: Components and utilities
+  if (lowerPath.includes('component')) score += 10
+  if (lowerPath.includes('util')) score += 10
+  if (lowerPath.includes('hook')) score += 10
+  if (lowerPath.includes('lib/')) score += 20
+
+  // Deprioritize test/docs
+  if (lowerPath.includes('test')) score -= 30
+  if (lowerPath.includes('spec')) score -= 30
+  if (lowerPath.includes('__')) score -= 20 // __tests__, __mocks__
+  if (lowerPath.includes('readme')) score -= 20
+  if (lowerPath.includes('docs/')) score -= 20
+
+  return score
+}
+
 async function fetchRepoTree(owner: string, repo: string, githubToken?: string): Promise<{ path: string; url: string }[]> {
   // Build headers with optional auth
   const headers: Record<string, string> = {
@@ -625,7 +665,7 @@ async function fetchRepoTree(owner: string, repo: string, githubToken?: string):
   const treeData = await treeResponse.json()
 
   // Filter to only files (not directories) that we want to scan
-  return treeData.tree
+  const files = treeData.tree
     .filter((item: { type: string; path: string }) =>
       item.type === 'blob' && shouldScanFile(item.path)
     )
@@ -633,6 +673,13 @@ async function fetchRepoTree(owner: string, repo: string, githubToken?: string):
       path: item.path,
       url: item.url,
     }))
+
+  // Sort by priority - most important files first
+  files.sort((a: { path: string }, b: { path: string }) =>
+    getFilePriority(b.path) - getFilePriority(a.path)
+  )
+
+  return files
 }
 
 async function fetchFileContent(url: string, githubToken?: string): Promise<string> {
@@ -842,8 +889,9 @@ export async function POST(request: NextRequest) {
       // Fetch repo tree
       const files = await fetchRepoTree(owner, repo, githubToken)
 
-      // Limit files to scan (avoid timeout)
-      const filesToScan = files.slice(0, 100)
+      // Scan all files - they're sorted by priority so important ones come first
+      // If timeout occurs, the most critical files will have been scanned
+      const filesToScan = files
 
       // Scan each file
       const hasApiKeys = apiKeys && Object.values(apiKeys).some(k => k)
@@ -948,15 +996,18 @@ export async function POST(request: NextRequest) {
       // Check dependencies
       await analyzeDependencies(owner, repo, findings, findingId, githubToken)
 
-      // If we had to limit files, add a note
-      if (files.length > 100) {
+      // If not all files were scanned (due to errors), list them
+      const unscannedFiles = filesToScan.slice(filesScanned)
+      if (unscannedFiles.length > 0) {
+        const unscannedList = unscannedFiles.slice(0, 20).map(f => f.path).join(', ')
+        const moreCount = unscannedFiles.length > 20 ? ` and ${unscannedFiles.length - 20} more` : ''
         findings.push({
           id: String(findingId.value++),
-          title: 'Partial Scan',
+          title: 'Some Files Not Scanned',
           severity: 'low',
           category: 'Info',
-          description: `Repository has ${files.length} scannable files. Only first 100 were scanned to avoid timeout.`,
-          recommendation: 'For complete analysis, run a local scan or use the CLI tool.',
+          description: `${unscannedFiles.length} files could not be scanned (may have timed out or errored): ${unscannedList}${moreCount}`,
+          recommendation: 'These files were not scanned. Consider running a local scan for complete coverage.',
         })
       }
 
