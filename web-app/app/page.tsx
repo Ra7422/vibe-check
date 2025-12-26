@@ -140,9 +140,10 @@ export default function Home() {
       return
     }
 
-    // Validate GitHub URL
-    if (!repoUrl.includes('github.com')) {
-      setError('Please enter a valid GitHub URL')
+    // Validate GitHub URL with proper regex
+    const githubUrlPattern = /^https?:\/\/(www\.)?github\.com\/[\w.-]+\/[\w.-]+\/?$/i
+    if (!githubUrlPattern.test(repoUrl.trim())) {
+      setError('Please enter a valid GitHub repository URL (e.g., https://github.com/owner/repo)')
       return
     }
 
@@ -157,7 +158,7 @@ export default function Home() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          repoUrl,
+          repoUrl: repoUrl.trim(),
           githubToken: githubToken || undefined,
           apiKeys: Object.fromEntries(
             Object.entries(apiKeys).filter(([, v]) => v)
@@ -166,8 +167,13 @@ export default function Home() {
       })
 
       if (!response.ok) {
-        const data = await response.json()
-        throw new Error(data.error || 'Scan failed')
+        const data = await response.json().catch(() => ({}))
+        // Sanitize error message - don't expose internal details
+        const safeError = data.error?.includes('rate limit') ? 'GitHub rate limit exceeded. Try again later.' :
+          data.error?.includes('not found') ? 'Repository not found. Check the URL and try again.' :
+          data.error?.includes('private') ? 'Private repository. Add a GitHub token to scan private repos.' :
+          'Scan failed. Please check the URL and try again.'
+        throw new Error(safeError)
       }
 
       const data = await response.json()
@@ -177,7 +183,9 @@ export default function Home() {
       setStep('results')
     } catch (err: unknown) {
       setScanStatus('error')
-      setError(err instanceof Error ? err.message : 'Failed to scan repository. Please try again.')
+      // Use safe error messages
+      const message = err instanceof Error ? err.message : 'Failed to scan repository. Please try again.'
+      setError(message)
       setStep('setup')
     }
   }

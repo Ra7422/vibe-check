@@ -1,7 +1,7 @@
 # Security Scan Report
 
 **Repository:** https://github.com/Ra7422/vibe-check
-**Score:** 8/100
+**Score:** 36/100
 **Date:** 2025-12-26
 
 ## Summary
@@ -9,9 +9,9 @@
 | Severity | Count |
 |----------|-------|
 | Critical | 0 |
-| High | 5 |
+| High | 2 |
 | Medium | 8 |
-| Low | 1 |
+| Low | 2 |
 
 ## Issues to Fix
 
@@ -27,133 +27,113 @@ Please review and fix the following security issues:
 
 ---
 
-### 2. [MEDIUM] [AI] Missing Content Security Policy
+### 2. [MEDIUM] [AI] Potential XSS Vulnerability
 
-**Category:** Security
+**Category:** Cross-Site Scripting (XSS)
 
-**Description:** The code does not include a Content Security Policy (CSP) header, which can help prevent various types of web application vulnerabilities such as Cross-Site Scripting (XSS) attacks.
+**Description:** The `children` prop passed to the `RootLayout` component is not properly sanitized, which could lead to a Cross-Site Scripting (XSS) vulnerability if the content is not properly escaped.
 
-**Location:** `web-app/app/layout.tsx`
-
----
-
-### 3. [HIGH] [AI] Hardcoded GitHub Personal Access Token
-
-**Category:** Security
-
-**Description:** The GitHub personal access token is stored in the browser's local storage, which could potentially be accessed by an attacker. This could lead to unauthorized access to the user's GitHub account.
-
-**Location:** `web-app/app/page.tsx:45`
+**Location:** `web-app/app/layout.tsx:18`
 
 ---
 
-### 4. [MEDIUM] [AI] Lack of Input Validation
+### 3. [MEDIUM] [AI] Insecure Storage of GitHub Token
 
 **Category:** Security
 
-**Description:** The application does not perform proper input validation on the GitHub repository URL, which could lead to potential security vulnerabilities such as cross-site scripting (XSS) or other injection attacks.
+**Description:** The GitHub token is being stored in the browser's localStorage, which can potentially be accessed by other scripts or malicious actors. This can lead to unauthorized access to the user's GitHub account.
 
-**Location:** `web-app/app/page.tsx:101`
+**Location:** `web-app/app/page.tsx:61`
 
 ---
 
-### 5. [HIGH] [AI] Github Token Exposed in Local Storage
+### 4. [HIGH] [AI] Insecure Handling of GitHub Token
 
-**Category:** Sensitive Data Exposure
+**Category:** Authentication
 
-**Description:** Storing sensitive data such as GitHub Personal Access Tokens in local storage can lead to potential security risks as malicious scripts can access this data.
+**Description:** The GitHub token is stored in localStorage without encryption, exposing it to XSS attacks.
+
+**Location:** `web-app/app/page.tsx:19`
+
+---
+
+### 5. [MEDIUM] [AI] Lack of URL Validation
+
+**Category:** Input Validation
+
+**Description:** The GitHub URL validation is minimal and can be bypassed, which may lead to erroneous behavior or security issues.
+
+**Location:** `web-app/app/page.tsx:72`
+
+---
+
+### 6. [MEDIUM] [AI] Information Disclosure through Error Handling
+
+**Category:** Information Exposure
+
+**Description:** Error messages returned from the API are thrown directly to the user without sanitization, which could leak sensitive information.
+
+**Location:** `web-app/app/page.tsx:109`
+
+---
+
+### 7. [MEDIUM] [AI] Sensitive Information Storage in LocalStorage
+
+**Category:** Information Disclosure
+
+**Description:** The application stores the GitHub token (Personal Access Token) in localStorage. This is generally discouraged for sensitive information, as localStorage is accessible to any JavaScript code running within the same origin, including potentially malicious scripts.  A more secure approach would be to handle the token server-side or use more secure client-side storage mechanisms if absolutely necessary (e.g., cookies with HttpOnly and Secure flags or the browser's credential management API).
+
+**Location:** `web-app/app/page.tsx:40`
+
+---
+
+### 8. [HIGH] [AI] Sensitive Data Exposure in Local Storage
+
+**Category:** Data Protection
+
+**Description:** GitHub tokens are stored in localStorage which is vulnerable to XSS attacks. Tokens should be stored in httpOnly cookies or a more secure storage mechanism.
 
 **Location:** `web-app/app/page.tsx:20`
 
 ---
 
-### 6. [MEDIUM] [AI] Lack of Input Validation on GitHub URL
-
-**Category:** Input Validation
-
-**Description:** While there is a basic check for 'github.com', it may allow for malformed URLs that could lead to unwanted requests or errors.
-
-**Location:** `web-app/app/page.tsx:70`
-
----
-
-### 7. [HIGH] [AI] XSS Vulnerability in Markdown Generation
-
-**Category:** Cross-Site Scripting
-
-**Description:** User-supplied input (repoUrl, findings content) is inserted directly into the Markdown report without any sanitization, which could allow for XSS attacks if the content includes malicious scripts.
-
-**Location:** `web-app/app/page.tsx:47`
-
----
-
-### 8. [HIGH] [AI] Sensitive Information Storage in Local Storage
-
-**Category:** Information Disclosure
-
-**Description:** The GitHub token (Personal Access Token) is stored in the browser's local storage. This is generally discouraged for sensitive information because local storage is accessible to JavaScript code running within the same origin, increasing the risk of XSS attacks leading to token theft.
-
-**Location:** `web-app/app/page.tsx:41`
-
----
-
-### 9. [MEDIUM] [AI] Potential Cross-Site Scripting (XSS) via Markdown Report
-
-**Category:** Cross-Site Scripting (XSS)
-
-**Description:** The generated Markdown report could be vulnerable to XSS if the `finding.title`, `finding.description`, or `finding.file` contain malicious HTML or JavaScript code. When the markdown is rendered, this malicious code could be executed. Input sanitization/escaping should be implemented before including user-provided data into the markdown string.
-
-**Location:** `web-app/app/page.tsx:63`
-
----
-
-### 10. [HIGH] [AI] Sensitive Data Exposure via localStorage
-
-**Category:** Data Protection
-
-**Description:** GitHub tokens are stored in localStorage which is accessible via JavaScript and vulnerable to XSS attacks. Tokens should be stored in httpOnly cookies or more secure storage mechanisms.
-
-**Location:** `web-app/app/page.tsx:22`
-
----
-
-### 11. [MEDIUM] [AI] Insecure Direct Object Reference
+### 9. [MEDIUM] [AI] Insecure Direct Object Reference
 
 **Category:** Access Control
 
-**Description:** The API endpoint '/api/scan' is called directly without proper authentication or authorization checks on the client side.
+**Description:** The API endpoint '/api/scan' does not appear to have any authentication or authorization checks beyond the optional GitHub token.
 
-**Location:** `web-app/app/page.tsx:70`
+**Location:** `web-app/app/page.tsx:60`
 
 ---
 
-### 12. [MEDIUM] [AI] Incomplete Error Handling
+### 10. [MEDIUM] [AI] Insufficient Error Handling
 
 **Category:** Error Handling
 
-**Description:** Error handling in the fetch request is incomplete and may expose sensitive information in the error message.
+**Description:** Error handling in the fetch request is basic and may expose sensitive information in error messages.
 
-**Location:** `web-app/app/page.tsx:77`
-
----
-
-### 13. [MEDIUM] [AI] Unvalidated Redirect
-
-**Category:** Injection
-
-**Description:** The repoUrl is used directly in the API call without proper validation or sanitization, potentially leading to SSRF or other injection attacks.
-
-**Location:** `web-app/app/page.tsx:70`
+**Location:** `web-app/app/page.tsx:65`
 
 ---
 
-### 14. [MEDIUM] [AI] Insecure Token Transmission
+### 11. [MEDIUM] [AI] Potential CSRF Vulnerability
 
-**Category:** Data Protection
+**Category:** CSRF
 
-**Description:** GitHub tokens are sent in the request body without HTTPS enforcement, potentially exposing them in transit.
+**Description:** The API endpoint '/api/scan' does not appear to have CSRF protection mechanisms in place.
 
-**Location:** `web-app/app/page.tsx:70`
+**Location:** `web-app/app/page.tsx:60`
+
+---
+
+### 12. [LOW] [AI] Insecure File Download
+
+**Category:** File Handling
+
+**Description:** The file download functionality does not validate the content type or sanitize the filename, which could lead to potential security issues.
+
+**Location:** `web-app/app/page.tsx:50`
 
 ---
 
