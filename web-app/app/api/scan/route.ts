@@ -29,6 +29,35 @@ interface LLMResult {
   findings: LLMFinding[]
 }
 
+// Shared prompt for all LLM analysis - reduces false positives
+const getSecurityPrompt = (filePath: string, code: string) => `Analyze this code for REAL security vulnerabilities only. Return a JSON array of findings.
+
+IMPORTANT - DO NOT flag these as issues (they are false positives):
+- localStorage usage for user-provided API keys/tokens in client-side tools (this is intentional - tokens stay in user's browser)
+- React/Next.js standard patterns like {children} props, metadata exports, layout components
+- Auto-generated framework files (next-env.d.ts, .d.ts files, config files)
+- Static metadata or constants defined in code
+- Empty catch blocks that handle expected parse failures
+- Markdown generation for file downloads (not rendered in browser)
+- Client-side-only applications where data never leaves the browser
+
+ONLY flag REAL exploitable vulnerabilities like:
+- SQL injection, command injection, code injection
+- XSS where user input is actually rendered unsanitized
+- Hardcoded secrets/passwords/API keys IN THE CODE (not user-provided)
+- Insecure cryptography or authentication bypasses
+- Path traversal, SSRF, or file inclusion vulnerabilities
+- Exposed sensitive endpoints without authentication
+
+Each finding must have: title (string), severity (critical|high|medium|low), category (string), description (string), line (number if applicable).
+
+File: ${filePath}
+\`\`\`
+${code.slice(0, 4000)}
+\`\`\`
+
+Return [] if no REAL issues found. Return ONLY valid JSON array, no other text.`
+
 // LLM analysis functions
 async function analyzeWithAnthropic(code: string, filePath: string, apiKey: string): Promise<LLMResult> {
   try {
@@ -44,14 +73,7 @@ async function analyzeWithAnthropic(code: string, filePath: string, apiKey: stri
         max_tokens: 1024,
         messages: [{
           role: 'user',
-          content: `Analyze this code for security vulnerabilities. Return ONLY a JSON array of findings. Each finding must have: title (string), severity (critical|high|medium|low), category (string), description (string), line (number if applicable).
-
-File: ${filePath}
-\`\`\`
-${code.slice(0, 4000)}
-\`\`\`
-
-Return [] if no issues found. Return ONLY valid JSON array, no other text.`
+          content: getSecurityPrompt(filePath, code)
         }],
       }),
     })
@@ -83,14 +105,7 @@ async function analyzeWithOpenAI(code: string, filePath: string, apiKey: string)
         max_tokens: 1024,
         messages: [{
           role: 'user',
-          content: `Analyze this code for security vulnerabilities. Return ONLY a JSON array of findings. Each finding must have: title (string), severity (critical|high|medium|low), category (string), description (string), line (number if applicable).
-
-File: ${filePath}
-\`\`\`
-${code.slice(0, 4000)}
-\`\`\`
-
-Return [] if no issues found. Return ONLY valid JSON array, no other text.`
+          content: getSecurityPrompt(filePath, code)
         }],
       }),
     })
@@ -117,14 +132,7 @@ async function analyzeWithGemini(code: string, filePath: string, apiKey: string)
       body: JSON.stringify({
         contents: [{
           parts: [{
-            text: `Analyze this code for security vulnerabilities. Return ONLY a JSON array of findings. Each finding must have: title (string), severity (critical|high|medium|low), category (string), description (string), line (number if applicable).
-
-File: ${filePath}
-\`\`\`
-${code.slice(0, 4000)}
-\`\`\`
-
-Return [] if no issues found. Return ONLY valid JSON array, no other text.`
+            text: getSecurityPrompt(filePath, code)
           }]
         }],
       }),
@@ -158,14 +166,7 @@ async function analyzeWithGrok(code: string, filePath: string, apiKey: string): 
         max_tokens: 1024,
         messages: [{
           role: 'user',
-          content: `Analyze this code for security vulnerabilities. Return ONLY a JSON array of findings. Each finding must have: title (string), severity (critical|high|medium|low), category (string), description (string), line (number if applicable).
-
-File: ${filePath}
-\`\`\`
-${code.slice(0, 4000)}
-\`\`\`
-
-Return [] if no issues found. Return ONLY valid JSON array, no other text.`
+          content: getSecurityPrompt(filePath, code)
         }],
       }),
     })
@@ -198,14 +199,7 @@ async function analyzeWithMistral(code: string, filePath: string, apiKey: string
         max_tokens: 1024,
         messages: [{
           role: 'user',
-          content: `Analyze this code for security vulnerabilities. Return ONLY a JSON array of findings. Each finding must have: title (string), severity (critical|high|medium|low), category (string), description (string), line (number if applicable).
-
-File: ${filePath}
-\`\`\`
-${code.slice(0, 4000)}
-\`\`\`
-
-Return [] if no issues found. Return ONLY valid JSON array, no other text.`
+          content: getSecurityPrompt(filePath, code)
         }],
       }),
     })
@@ -866,7 +860,7 @@ export async function POST(request: NextRequest) {
             const isRoute = file.path.includes('route') || file.path.includes('api') || file.path.includes('auth')
             const isConfig = file.path.includes('.env') || file.path.includes('config')
 
-            // Skip non-production files from AI analysis
+            // Skip non-production files and framework files from AI analysis
             const isExcluded = file.path.includes('scan') ||
               file.path.includes('security') ||
               file.path.includes('pattern') ||
@@ -890,7 +884,12 @@ export async function POST(request: NextRequest) {
               file.path.includes('next.config') ||
               file.path.includes('eslint') ||
               file.path.includes('prettier') ||
-              file.path.includes('.config.')
+              file.path.includes('.config.') ||
+              // Framework/auto-generated files
+              file.path.includes('next-env.d.ts') ||
+              file.path.endsWith('.d.ts') ||
+              file.path.includes('layout.tsx') ||
+              file.path.includes('layout.ts')
 
             if ((isImportant || isRoute || isConfig) && !isExcluded) {
               llmFilesToAnalyze.push({ path: file.path, content })
