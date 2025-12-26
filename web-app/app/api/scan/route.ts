@@ -34,6 +34,8 @@ const getSecurityPrompt = (filePath: string, code: string) => `Analyze this code
 
 IMPORTANT - DO NOT flag these as issues (they are false positives):
 - localStorage usage for user-provided API keys/tokens in client-side tools (this is intentional - tokens stay in user's browser)
+- Code that READS API keys from localStorage or state - these are user-provided at runtime, NOT hardcoded
+- Comments mentioning "API keys" or "tokens" - comments are not vulnerabilities
 - React/Next.js standard patterns like {children} props, metadata exports, layout components
 - Auto-generated framework files (next-env.d.ts, .d.ts files, config files)
 - Static metadata or constants defined in code
