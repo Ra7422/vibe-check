@@ -110,7 +110,7 @@ Return [] if no issues found. Return ONLY valid JSON array, no other text.`
 
 async function analyzeWithGemini(code: string, filePath: string, apiKey: string): Promise<LLMResult> {
   try {
-    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
+    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${apiKey}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -130,7 +130,8 @@ Return [] if no issues found. Return ONLY valid JSON array, no other text.`
     })
 
     if (!response.ok) {
-      return { provider: 'gemini', success: false, error: `API error: ${response.status}`, findings: [] }
+      const errorText = await response.text().catch(() => '')
+      return { provider: 'gemini', success: false, error: `API error ${response.status}: ${errorText.slice(0, 100)}`, findings: [] }
     }
     const data = await response.json()
     const text = data.candidates?.[0]?.content?.parts?.[0]?.text || '[]'
@@ -152,7 +153,7 @@ async function analyzeWithGrok(code: string, filePath: string, apiKey: string): 
         'Authorization': `Bearer ${apiKey}`,
       },
       body: JSON.stringify({
-        model: 'grok-beta',
+        model: 'grok-2-1212',
         max_tokens: 1024,
         messages: [{
           role: 'user',
@@ -169,7 +170,8 @@ Return [] if no issues found. Return ONLY valid JSON array, no other text.`
     })
 
     if (!response.ok) {
-      return { provider: 'grok', success: false, error: `API error: ${response.status}`, findings: [] }
+      const errorText = await response.text().catch(() => '')
+      return { provider: 'grok', success: false, error: `API error ${response.status}: ${errorText.slice(0, 100)}`, findings: [] }
     }
     const data = await response.json()
     const text = data.choices?.[0]?.message?.content || '[]'
