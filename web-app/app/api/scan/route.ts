@@ -494,7 +494,7 @@ const VULNERABILITY_PATTERNS = [
   },
   {
     name: 'Console Logging',
-    pattern: /console\.(log|debug|info|warn|error)\s*\(/g,
+    pattern: /(?<!https?:\/\/[^\s]*?)console\.(log|debug|info|warn|error)\s*\(/g,
     severity: 'low' as const,
     category: 'Best Practice',
     description: 'Console statements may leak sensitive information in production.',
