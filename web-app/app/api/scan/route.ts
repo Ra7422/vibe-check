@@ -967,13 +967,43 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Deduplicate similar findings
+    // Deduplicate similar findings (especially AI findings from multiple models)
     const uniqueFindings = findings.reduce((acc: Finding[], finding) => {
       // For console logs, only keep first occurrence per file
       if (finding.title === 'Console Logging') {
         const existing = acc.find(f => f.title === 'Console Logging' && f.file === finding.file)
         if (existing) return acc
       }
+
+      // For AI findings, deduplicate by similar title/category/file
+      if (finding.title.startsWith('[AI]') && finding.source) {
+        // Normalize title for comparison (remove [AI] prefix and lowercase)
+        const normalizedTitle = finding.title.replace('[AI] ', '').toLowerCase()
+        const normalizedCategory = finding.category.toLowerCase()
+
+        // Find existing similar finding
+        const existing = acc.find(f => {
+          if (!f.title.startsWith('[AI]')) return false
+          const existingTitle = f.title.replace('[AI] ', '').toLowerCase()
+          const existingCategory = f.category.toLowerCase()
+
+          // Match if same category and similar title (or same file)
+          const sameTopic = existingCategory === normalizedCategory &&
+            (existingTitle.includes(normalizedTitle.slice(0, 20)) ||
+             normalizedTitle.includes(existingTitle.slice(0, 20)) ||
+             f.file === finding.file)
+          return sameTopic
+        })
+
+        if (existing && existing.source) {
+          // Merge sources
+          if (!existing.source.includes(finding.source)) {
+            existing.source = `${existing.source}, ${finding.source}`
+          }
+          return acc
+        }
+      }
+
       acc.push(finding)
       return acc
     }, [])

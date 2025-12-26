@@ -574,11 +574,11 @@ export default function Home() {
                           {finding.severity.toUpperCase()}
                         </span>
                         <span className="text-sm text-gray-500">{finding.category}</span>
-                        {finding.source && (
-                          <span className="px-2 py-0.5 bg-purple-100 text-purple-700 rounded text-xs font-medium">
-                            {finding.source}
+                        {finding.source && finding.source.split(', ').map((src) => (
+                          <span key={src} className="px-2 py-0.5 bg-purple-100 text-purple-700 rounded text-xs font-medium">
+                            {src}
                           </span>
-                        )}
+                        ))}
                       </div>
                     </div>
 
