@@ -58,7 +58,10 @@ export default function Home() {
     if (storedApiKeys) {
       try {
         setApiKeys(JSON.parse(storedApiKeys))
-      } catch {}
+      } catch {
+        // Invalid JSON in localStorage - clear and use defaults
+        localStorage.removeItem('llm_api_keys')
+      }
     }
   }, [])
 
