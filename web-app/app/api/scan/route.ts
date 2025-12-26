@@ -889,64 +889,82 @@ export async function POST(request: NextRequest) {
       // Fetch repo tree
       const files = await fetchRepoTree(owner, repo, githubToken)
 
-      // Scan all files - they're sorted by priority so important ones come first
-      // If timeout occurs, the most critical files will have been scanned
+      // Scan files with parallel fetching and soft timeout
       const filesToScan = files
-
-      // Scan each file
       const hasApiKeys = apiKeys && Object.values(apiKeys).some(k => k)
       const llmFilesToAnalyze: { path: string; content: string }[] = []
 
-      for (const file of filesToScan) {
-        try {
-          const content = await fetchFileContent(file.url, githubToken)
-          scanContent(content, file.path, findings, findingId)
-          filesScanned++
+      // Soft timeout - stop 5 seconds before Vercel's hard limit to return results
+      const startTime = Date.now()
+      const SOFT_TIMEOUT_MS = 50000 // 50 seconds (leaving 10s buffer for response)
+      const BATCH_SIZE = 15 // Fetch 15 files in parallel
 
-          // Collect important files for LLM analysis (limit to key files to avoid API costs)
-          if (hasApiKeys && llmFilesToAnalyze.length < 10) {
-            const ext = file.path.split('.').pop()?.toLowerCase()
-            const isImportant = ['ts', 'tsx', 'js', 'jsx', 'py', 'go', 'java', 'rb', 'php'].includes(ext || '')
-            const isRoute = file.path.includes('route') || file.path.includes('api') || file.path.includes('auth')
-            const isConfig = file.path.includes('.env') || file.path.includes('config')
+      // Process files in parallel batches
+      for (let i = 0; i < filesToScan.length; i += BATCH_SIZE) {
+        // Check soft timeout before starting new batch
+        if (Date.now() - startTime > SOFT_TIMEOUT_MS) {
+          break
+        }
 
-            // Skip non-production files and framework files from AI analysis
-            const isExcluded = file.path.includes('scan') ||
-              file.path.includes('security') ||
-              file.path.includes('pattern') ||
-              file.path.includes('vuln') ||
-              file.path.includes('detector') ||
-              file.path.includes('analyzer') ||
-              file.path.includes('checker') ||
-              file.path.includes('test') ||
-              file.path.includes('spec') ||
-              file.path.includes('mock') ||
-              file.path.includes('fixture') ||
-              file.path.includes('example') ||
-              file.path.includes('sample') ||
-              file.path.includes('demo') ||
-              file.path.includes('cli.') ||
-              file.path.includes('shared/') ||
-              file.path.includes('flow') ||
-              file.path.includes('tsconfig') ||
-              file.path.includes('tailwind.config') ||
-              file.path.includes('postcss.config') ||
-              file.path.includes('next.config') ||
-              file.path.includes('eslint') ||
-              file.path.includes('prettier') ||
-              file.path.includes('.config.') ||
-              // Framework/auto-generated files
-              file.path.includes('next-env.d.ts') ||
-              file.path.endsWith('.d.ts') ||
-              file.path.includes('layout.tsx') ||
-              file.path.includes('layout.ts')
+        const batch = filesToScan.slice(i, i + BATCH_SIZE)
 
-            if ((isImportant || isRoute || isConfig) && !isExcluded) {
-              llmFilesToAnalyze.push({ path: file.path, content })
+        // Fetch all files in batch in parallel
+        const batchResults = await Promise.allSettled(
+          batch.map(async (file) => {
+            const content = await fetchFileContent(file.url, githubToken)
+            return { path: file.path, content }
+          })
+        )
+
+        // Process successful fetches
+        for (const result of batchResults) {
+          if (result.status === 'fulfilled') {
+            const { path, content } = result.value
+            scanContent(content, path, findings, findingId)
+            filesScanned++
+
+            // Collect important files for LLM analysis
+            if (hasApiKeys && llmFilesToAnalyze.length < 15) {
+              const ext = path.split('.').pop()?.toLowerCase()
+              const isImportant = ['ts', 'tsx', 'js', 'jsx', 'py', 'go', 'java', 'rb', 'php'].includes(ext || '')
+              const isRoute = path.includes('route') || path.includes('api') || path.includes('auth')
+              const isConfig = path.includes('.env') || path.includes('config')
+
+              // Skip non-production files and framework files from AI analysis
+              const isExcluded = path.includes('scan') ||
+                path.includes('security') ||
+                path.includes('pattern') ||
+                path.includes('vuln') ||
+                path.includes('detector') ||
+                path.includes('analyzer') ||
+                path.includes('checker') ||
+                path.includes('test') ||
+                path.includes('spec') ||
+                path.includes('mock') ||
+                path.includes('fixture') ||
+                path.includes('example') ||
+                path.includes('sample') ||
+                path.includes('demo') ||
+                path.includes('cli.') ||
+                path.includes('shared/') ||
+                path.includes('flow') ||
+                path.includes('tsconfig') ||
+                path.includes('tailwind.config') ||
+                path.includes('postcss.config') ||
+                path.includes('next.config') ||
+                path.includes('eslint') ||
+                path.includes('prettier') ||
+                path.includes('.config.') ||
+                path.includes('next-env.d.ts') ||
+                path.endsWith('.d.ts') ||
+                path.includes('layout.tsx') ||
+                path.includes('layout.ts')
+
+              if ((isImportant || isRoute || isConfig) && !isExcluded) {
+                llmFilesToAnalyze.push({ path, content })
+              }
             }
           }
-        } catch (e) {
-          // Skip files that can't be read
         }
       }
 
@@ -996,18 +1014,20 @@ export async function POST(request: NextRequest) {
       // Check dependencies
       await analyzeDependencies(owner, repo, findings, findingId, githubToken)
 
-      // If not all files were scanned (due to errors), list them
+      // Report scan coverage
+      const scanDuration = ((Date.now() - startTime) / 1000).toFixed(1)
       const unscannedFiles = filesToScan.slice(filesScanned)
+
       if (unscannedFiles.length > 0) {
-        const unscannedList = unscannedFiles.slice(0, 20).map(f => f.path).join(', ')
-        const moreCount = unscannedFiles.length > 20 ? ` and ${unscannedFiles.length - 20} more` : ''
+        const unscannedList = unscannedFiles.slice(0, 15).map(f => f.path).join(', ')
+        const moreCount = unscannedFiles.length > 15 ? ` (+${unscannedFiles.length - 15} more)` : ''
         findings.push({
           id: String(findingId.value++),
-          title: 'Some Files Not Scanned',
+          title: 'Scan Coverage',
           severity: 'low',
           category: 'Info',
-          description: `${unscannedFiles.length} files could not be scanned (may have timed out or errored): ${unscannedList}${moreCount}`,
-          recommendation: 'These files were not scanned. Consider running a local scan for complete coverage.',
+          description: `Scanned ${filesScanned}/${filesToScan.length} files in ${scanDuration}s. Priority files (auth, API, routes) were scanned first. Not scanned: ${unscannedList}${moreCount}`,
+          recommendation: 'Security-critical files were prioritized. For complete coverage, run a local scan.',
         })
       }
 
