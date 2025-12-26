@@ -739,7 +739,7 @@ function scanContent(content: string, filePath: string, findings: Finding[], fin
   for (const pattern of VULNERABILITY_PATTERNS) {
     const regex = new RegExp(pattern.pattern.source, pattern.pattern.flags)
     let match
-    // Limit console.log findings to first 3
+    // Limit logging findings to first 3
     let patternCount = 0
     const maxPerPattern = pattern.name === 'Console Logging' ? 3 : 10
 
@@ -864,7 +864,7 @@ export async function POST(request: NextRequest) {
             const isRoute = file.path.includes('route') || file.path.includes('api') || file.path.includes('auth')
             const isConfig = file.path.includes('.env') || file.path.includes('config')
 
-            // Skip security scanner/pattern/test files to avoid false positives
+            // Skip non-production files from AI analysis
             const isExcluded = file.path.includes('scan') ||
               file.path.includes('security') ||
               file.path.includes('pattern') ||
@@ -881,7 +881,14 @@ export async function POST(request: NextRequest) {
               file.path.includes('demo') ||
               file.path.includes('cli.') ||
               file.path.includes('shared/') ||
-              file.path.includes('flow')
+              file.path.includes('flow') ||
+              file.path.includes('tsconfig') ||
+              file.path.includes('tailwind.config') ||
+              file.path.includes('postcss.config') ||
+              file.path.includes('next.config') ||
+              file.path.includes('eslint') ||
+              file.path.includes('prettier') ||
+              file.path.includes('.config.')
 
             if ((isImportant || isRoute || isConfig) && !isExcluded) {
               llmFilesToAnalyze.push({ path: file.path, content })
